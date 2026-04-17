@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= pageTitle || 'Danh sach truyen' %> | DramaBuzz Novel</title>
+  <meta name="description" content="<%= metaDesc || 'Tim kiem va loc truyen theo the loai, trang thai va do hot.' %>">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="novel-page">
+  <div class="novel-shell">
+    <header class="novel-topbar">
+      <a class="novel-brand" href="/novel"><span class="novel-brand__dot">N</span><span>DramaBuzz Novel</span></a>
+      <nav class="novel-nav" aria-label="Novel navigation">
+        <a href="/novel">Trang chu</a>
+        <a href="/stories" class="active">Thu vien truyen</a>
+      </nav>
+    </header>
+
+    <section class="novel-panel">
+      <div class="novel-panel__head">
+        <h1 class="novel-panel__title">Thu vien truyen</h1>
+        <div class="reader-muted"><%= total %> truyen</div>
+      </div>
+      <div class="novel-panel__body">
+        <form class="novel-filters" method="get" action="/stories">
+          <input class="novel-input" type="text" name="q" value="<%= filters.q %>" placeholder="Tim theo ten truyen, tac gia...">
+          <select class="novel-select" name="genre">
+            <option value="">Tat ca the loai</option>
+            <% (genres || []).forEach(function(item){ %>
+              <option value="<%= item.name %>" <%= filters.genre === item.name ? 'selected' : '' %>><%= item.name %> (<%= item.count %>)</option>
+            <% }); %>
+          </select>
+          <select class="novel-select" name="status">
+            <option value="">Moi trang thai</option>
+            <option value="ongoing" <%= filters.status === 'ongoing' ? 'selected' : '' %>>Dang ra</option>
+            <option value="completed" <%= filters.status === 'completed' ? 'selected' : '' %>>Hoan thanh</option>
+          </select>
+          <select class="novel-select" name="sort">
+            <option value="new" <%= filters.sort === 'new' ? 'selected' : '' %>>Moi nhat</option>
+            <option value="hot" <%= filters.sort === 'hot' ? 'selected' : '' %>>Hot nhat</option>
+            <option value="title" <%= filters.sort === 'title' ? 'selected' : '' %>>A-Z</option>
+          </select>
+          <button class="novel-btn novel-btn--primary" type="submit">Loc</button>
+        </form>
+
+        <% if (stories && stories.length) { %>
+          <div class="story-grid" id="storiesGrid" data-page="<%= page %>" data-pages="<%= pages %>">
+            <% stories.forEach(function(story){ %>
+              <a class="story-card" href="/story/<%= story.slug %>">
+                <img class="story-card__cover" loading="lazy" src="<%= story.coverImage || '/images/default-cover.svg' %>" alt="<%= story.title %>">
+                <div class="story-card__body">
+                  <div class="story-card__title"><%= story.title %></div>
+                  <div class="story-card__meta">Tac gia: <%= story.author %></div>
+                  <div class="story-card__meta">Luot doc: <%= Number(story.views || 0).toLocaleString('vi-VN') %></div>
+                  <div class="story-card__tags">
+                    <% (story.genres || []).slice(0, 3).forEach(function(genre){ %>
+                      <span class="story-card__tag"><%= genre %></span>
+                    <% }); %>
+                  </div>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+          <% if (page < pages) { %>
+            <div id="storiesSentinel" class="reader-muted" style="padding:14px;text-align:center">Dang tai them...</div>
+          <% } %>
+        <% } else { %>
+          <div class="novel-empty">Khong tim thay truyen phu hop.</div>
+        <% } %>
+      </div>
+    </section>
+  </div>
+  <script src="/js/novel-stories.js"></script>
+</body>
+</html>

@@ -1,0 +1,425 @@
+﻿<%
+  const pageTitle  = 'Quản lý người dùng';
+  const activePage = 'admin';
+%>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/admin.css?v=2026.04.16.01">
+<!-- MANAGE-USERS PAGE REWRITE START -->
+
+<main class="container">
+  <div class="page-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <div class="main-content" style="grid-column:2/-1">
+
+      <!-- Top bar -->
+      <div class="mu-topbar">
+        <div>
+          <h1 class="mu-title"><i class="fas fa-users-cog"></i> Quản lý người dùng</h1>
+          <p class="mu-subtitle">Xem, chỉnh sửa thông tin và quản lý tài khoản</p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="mu-stats-row">
+        <div class="mu-stat">
+          <div class="mu-stat-icon mu-stat-icon--total"><i class="fas fa-users"></i></div>
+          <div>
+            <div class="mu-stat-value"><%= total %></div>
+            <div class="mu-stat-label">Tổng tài khoản</div>
+          </div>
+        </div>
+        <div class="mu-stat">
+          <div class="mu-stat-icon mu-stat-icon--admin"><i class="fas fa-shield-alt"></i></div>
+          <div>
+            <div class="mu-stat-value"><%= totalAdmin %></div>
+            <div class="mu-stat-label">Admin</div>
+          </div>
+        </div>
+        <div class="mu-stat">
+          <div class="mu-stat-icon mu-stat-icon--user"><i class="fas fa-user"></i></div>
+          <div>
+            <div class="mu-stat-value"><%= total - totalAdmin %></div>
+            <div class="mu-stat-label">Thành viên</div>
+          </div>
+        </div>
+        <div class="mu-stat">
+          <div class="mu-stat-icon mu-stat-icon--banned"><i class="fas fa-ban"></i></div>
+          <div>
+            <div class="mu-stat-value"><%= totalBanned %></div>
+            <div class="mu-stat-label">Đã khóa</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="mu-card mu-filters">
+        <div class="mu-search-wrap">
+          <i class="fas fa-search mu-search-icon"></i>
+          <input type="text" id="userSearch" class="mu-search-input"
+            placeholder="Tìm kiếm theo tên hoặc username..."
+            value="<%= typeof search !== 'undefined' ? search : '' %>">
+        </div>
+        <div class="mu-filter-row">
+          <select id="roleFilter" class="mu-select">
+            <option value="">Tất cả vai trò</option>
+            <option value="admin" <%= typeof role !== 'undefined' && role === 'admin' ? 'selected' : '' %>>Admin</option>
+            <option value="user"  <%= typeof role !== 'undefined' && role === 'user'  ? 'selected' : '' %>>Thành viên</option>
+          </select>
+          <select id="statusFilter" class="mu-select">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active" <%= typeof status !== 'undefined' && status === 'active' ? 'selected' : '' %>>Hoạt động</option>
+            <option value="banned" <%= typeof status !== 'undefined' && status === 'banned' ? 'selected' : '' %>>Đã khóa</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- User list -->
+      <div class="mu-card" style="padding:0;overflow:hidden">
+        <div class="mu-list-header">
+          <span>Tài khoản (<%= users.length %>)</span>
+        </div>
+        <div id="usersTable">
+          <% const activeUser = typeof currentUser !== 'undefined' ? currentUser : (typeof user !== 'undefined' ? user : null); %>
+          <% users.forEach(function(u) { %>
+            <div class="mu-row"
+              data-id="<%= u._id %>"
+              data-name="<%= u.displayName.replace(/"/g,'&quot;') %>"
+              data-username="<%= u.username %>"
+              data-email="<%= u.email || '' %>"
+              data-bio="<%= (u.bio || '').replace(/"/g,'&quot;') %>"
+              data-admin="<%= u.isAdmin ? '1' : '0' %>"
+              data-banned="<%= u.isBanned ? '1' : '0' %>"
+              data-avatar="<%= u.avatar || '' %>">
+
+              <div class="mu-avatar">
+                <img src="<%= u.avatar || '/images/default-avatar.svg' %>" alt="">
+                <% if (u.isBanned) { %><span class="mu-avatar-banned"><i class="fas fa-ban"></i></span><% } %>
+              </div>
+
+              <div class="mu-row-info">
+                <div class="mu-row-name">
+                  <a href="/u/<%= u.username %>" target="_blank" class="mu-link"><%= u.displayName %></a>
+                  <% if (u.isAdmin) { %><span class="mu-badge mu-badge--admin">Admin</span><% } %>
+                  <% if (u.isBanned) { %><span class="mu-badge mu-badge--banned">Đã khóa</span><% } %>
+                </div>
+                <div class="mu-row-meta">
+                  <span>@<%= u.username %></span>
+                  <span><i class="fas fa-file-alt"></i> <%= u.postCount || 0 %> bài</span>
+                  <span><i class="fas fa-calendar-alt"></i> <%= new Date(u.createdAt).toLocaleDateString('vi-VN') %></span>
+                  <% if (u.email) { %><span><i class="fas fa-envelope"></i> <%= u.email %></span><% } %>
+                </div>
+              </div>
+
+              <div class="mu-row-actions">
+                <button class="mu-btn mu-btn--icon btn-edit" data-id="<%= u._id %>" title="Sửa thông tin">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="mu-btn mu-btn--icon btn-pwd" data-id="<%= u._id %>" data-name="<%= u.displayName.replace(/"/g,'&quot;') %>" title="Đổi mật khẩu">
+                  <i class="fas fa-key"></i>
+                </button>
+                <% if (activeUser && (!u.isAdmin || (u._id && u._id.toString() !== (activeUser._id || '').toString()))) { %>
+                  <button class="mu-btn mu-btn--icon <%= u.isBanned ? 'mu-btn--success' : 'mu-btn--danger' %> btn-ban"
+                    data-id="<%= u._id %>" title="<%= u.isBanned ? 'Mở khóa' : 'Khóa tài khoản' %>">
+                    <i class="fas fa-<%= u.isBanned ? 'unlock' : 'ban' %>"></i>
+                  </button>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+          <% if (!users.length) { %>
+            <div style="padding:40px;text-align:center;color:var(--ink-4);font-size:.9rem">
+              <i class="fas fa-search" style="font-size:2rem;margin-bottom:12px;display:block;opacity:.4"></i>
+              Không tìm thấy người dùng nào.
+            </div>
+          <% } %>
+        </div>
+
+        <% if (typeof pages !== 'undefined' && pages > 1) { %>
+          <div class="mu-pagination">
+            <% for (let i = 1; i <= pages; i++) { %>
+              <a href="?page=<%= i %><%= typeof search !== 'undefined' && search ? '&search='+search : '' %><%= typeof role !== 'undefined' && role ? '&role='+role : '' %><%= typeof status !== 'undefined' && status ? '&status='+status : '' %>"
+                class="mu-page-link <%= i === page ? 'mu-page-link--active' : '' %>"><%= i %></a>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ═══ Edit Modal ═══ -->
+<div class="mu-modal-overlay" id="editModal">
+  <div class="mu-modal">
+    <div class="mu-modal-header">
+      <h3 class="mu-modal-title"><i class="fas fa-pen"></i> Sửa thông tin người dùng</h3>
+      <button class="mu-modal-close" data-close="editModal"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="editUserForm" class="mu-modal-body">
+      <input type="hidden" id="editUserId">
+      <div class="mu-modal-avatar-row">
+        <div class="mu-modal-avatar" id="editAvatarPreview"></div>
+        <div>
+          <div class="mu-field-name" id="editUserNamePreview"></div>
+          <div class="mu-field-username" id="editUserUsernamePreview"></div>
+        </div>
+      </div>
+      <div class="mu-form-row">
+        <div class="mu-field">
+          <label class="mu-label">Tên hiển thị <span class="mu-required">*</span></label>
+          <input type="text" id="editDisplayName" class="mu-input" required placeholder="Tên hiển thị...">
+        </div>
+        <div class="mu-field">
+          <label class="mu-label">Username <span class="mu-required">*</span></label>
+          <input type="text" id="editUsername" class="mu-input" required placeholder="username...">
+        </div>
+      </div>
+      <div class="mu-field">
+        <label class="mu-label">Email</label>
+        <input type="email" id="editEmail" class="mu-input" placeholder="email@example.com">
+      </div>
+      <div class="mu-field">
+        <label class="mu-label">Giới thiệu</label>
+        <textarea id="editBio" class="mu-input mu-textarea" rows="3" placeholder="Mô tả ngắn về người dùng..."></textarea>
+      </div>
+      <div class="mu-field">
+        <label class="mu-check-label">
+          <input type="checkbox" id="editIsAdmin">
+          <span class="mu-check-box"></span>
+          Cấp quyền Admin
+        </label>
+      </div>
+      <p id="editMsg" class="mu-form-msg"></p>
+      <div class="mu-modal-footer">
+        <button type="button" class="mu-btn mu-btn--ghost" data-close="editModal">Hủy</button>
+        <button type="submit" class="mu-btn mu-btn--primary" id="editSubmitBtn">
+          <i class="fas fa-save"></i> Lưu thay đổi
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ Password Modal ═══ -->
+<div class="mu-modal-overlay" id="pwdModal">
+  <div class="mu-modal mu-modal--sm">
+    <div class="mu-modal-header">
+      <h3 class="mu-modal-title"><i class="fas fa-key"></i> Đổi mật khẩu</h3>
+      <button class="mu-modal-close" data-close="pwdModal"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="pwdForm" class="mu-modal-body">
+      <input type="hidden" id="pwdUserId">
+      <p class="mu-modal-sub">Đổi mật khẩu cho: <strong id="pwdUserName"></strong></p>
+      <div class="mu-field">
+        <label class="mu-label">Mật khẩu mới <span class="mu-required">*</span></label>
+        <div class="mu-pwd-wrap">
+          <input type="password" id="pwdNew" class="mu-input" required minlength="6" placeholder="Tối thiểu 6 ký tự">
+          <button type="button" class="mu-pwd-toggle" data-target="pwdNew"><i class="fas fa-eye"></i></button>
+        </div>
+      </div>
+      <div class="mu-field">
+        <label class="mu-label">Xác nhận mật khẩu <span class="mu-required">*</span></label>
+        <div class="mu-pwd-wrap">
+          <input type="password" id="pwdConfirm" class="mu-input" required minlength="6" placeholder="Nhập lại mật khẩu">
+          <button type="button" class="mu-pwd-toggle" data-target="pwdConfirm"><i class="fas fa-eye"></i></button>
+        </div>
+      </div>
+      <p id="pwdMsg" class="mu-form-msg"></p>
+      <div class="mu-modal-footer">
+        <button type="button" class="mu-btn mu-btn--ghost" data-close="pwdModal">Hủy</button>
+        <button type="submit" class="mu-btn mu-btn--primary" id="pwdSubmitBtn">
+          <i class="fas fa-check"></i> Xác nhận
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><strong>🔥 DramaBuzz</strong> – Blog giải trí & drama 24/7 · Đăng nhập để tương tác!</p>
+  </div>
+</footer>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+<script>
+'use strict';
+
+/* ── Modal helpers ── */
+function openModal(id)  { document.getElementById(id).classList.add('mu-modal-open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('mu-modal-open'); }
+
+document.querySelectorAll('[data-close]').forEach(btn =>
+  btn.addEventListener('click', () => closeModal(btn.dataset.close))
+);
+document.querySelectorAll('.mu-modal-overlay').forEach(overlay =>
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); })
+);
+
+/* ── Search / filter ── */
+function debounce(fn, ms) {
+  let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+function applyFilters() {
+  const p = new URLSearchParams();
+  const q = document.getElementById('userSearch').value;
+  const r = document.getElementById('roleFilter').value;
+  const s = document.getElementById('statusFilter').value;
+  if (q) p.set('search', q);
+  if (r) p.set('role', r);
+  if (s) p.set('status', s);
+  window.location.href = '?' + p.toString();
+}
+document.getElementById('userSearch').addEventListener('input', debounce(applyFilters, 400));
+document.getElementById('roleFilter').addEventListener('change', applyFilters);
+document.getElementById('statusFilter').addEventListener('change', applyFilters);
+
+/* ── Edit user ── */
+document.querySelectorAll('.btn-edit').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const row    = btn.closest('.mu-row');
+    const avatar = row.dataset.avatar;
+
+    document.getElementById('editUserId').value                    = row.dataset.id;
+    document.getElementById('editDisplayName').value               = row.dataset.name;
+    document.getElementById('editUsername').value                  = row.dataset.username;
+    document.getElementById('editEmail').value                     = row.dataset.email;
+    document.getElementById('editBio').value                       = row.dataset.bio || '';
+    document.getElementById('editIsAdmin').checked                 = row.dataset.admin === '1';
+    document.getElementById('editUserNamePreview').textContent     = row.dataset.name;
+    document.getElementById('editUserUsernamePreview').textContent = '@' + row.dataset.username;
+    document.getElementById('editMsg').textContent                 = '';
+    document.getElementById('editMsg').className                   = 'mu-form-msg';
+
+    const prev = document.getElementById('editAvatarPreview');
+    prev.innerHTML = avatar ? `<img src="${avatar}" alt="">` : `<img src="/images/default-avatar.svg" alt="">`;
+
+    openModal('editModal');
+  });
+});
+
+document.getElementById('editUserForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('editSubmitBtn');
+  const msg = document.getElementById('editMsg');
+  const id  = document.getElementById('editUserId').value;
+
+  setLoading(btn, true);
+  msg.textContent = '';
+  msg.className   = 'mu-form-msg';
+
+  try {
+    const res  = await fetch(`/api/admin/users/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        displayName: document.getElementById('editDisplayName').value.trim(),
+        username:    document.getElementById('editUsername').value.trim(),
+        email:       document.getElementById('editEmail').value.trim(),
+        bio:         document.getElementById('editBio').value.trim(),
+        isAdmin:     document.getElementById('editIsAdmin').checked,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Lỗi cập nhật');
+
+    msg.textContent = '✅ Đã lưu thay đổi';
+    msg.className   = 'mu-form-msg mu-form-msg--ok';
+    showToast('✅ Đã cập nhật thông tin', 'success');
+    setTimeout(() => { closeModal('editModal'); location.reload(); }, 900);
+  } catch (err) {
+    msg.textContent = '❌ ' + err.message;
+    msg.className   = 'mu-form-msg mu-form-msg--err';
+  } finally {
+    setLoading(btn, false);
+  }
+});
+
+/* ── Change password ── */
+document.querySelectorAll('.btn-pwd').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('pwdUserId').value        = btn.dataset.id;
+    document.getElementById('pwdUserName').textContent = btn.dataset.name;
+    document.getElementById('pwdNew').value           = '';
+    document.getElementById('pwdConfirm').value       = '';
+    document.getElementById('pwdMsg').textContent     = '';
+    document.getElementById('pwdMsg').className       = 'mu-form-msg';
+    openModal('pwdModal');
+  });
+});
+
+document.getElementById('pwdForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn  = document.getElementById('pwdSubmitBtn');
+  const msg  = document.getElementById('pwdMsg');
+  const id   = document.getElementById('pwdUserId').value;
+  const pwd  = document.getElementById('pwdNew').value;
+  const conf = document.getElementById('pwdConfirm').value;
+
+  if (pwd !== conf) {
+    msg.textContent = '❌ Mật khẩu xác nhận không khớp';
+    msg.className   = 'mu-form-msg mu-form-msg--err';
+    return;
+  }
+  setLoading(btn, true);
+  msg.textContent = '';
+
+  try {
+    const res  = await fetch(`/api/admin/users/${id}/password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password: pwd }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Lỗi đổi mật khẩu');
+
+    msg.textContent = '✅ Đã đổi mật khẩu';
+    msg.className   = 'mu-form-msg mu-form-msg--ok';
+    showToast('✅ Đã đổi mật khẩu thành công', 'success');
+    setTimeout(() => closeModal('pwdModal'), 1200);
+  } catch (err) {
+    msg.textContent = '❌ ' + err.message;
+    msg.className   = 'mu-form-msg mu-form-msg--err';
+  } finally {
+    setLoading(btn, false);
+  }
+});
+
+/* ── Show/hide password ── */
+document.querySelectorAll('.mu-pwd-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById(btn.dataset.target);
+    const isPass = input.type === 'password';
+    input.type      = isPass ? 'text' : 'password';
+    btn.innerHTML   = `<i class="fas fa-${isPass ? 'eye-slash' : 'eye'}"></i>`;
+  });
+});
+
+/* ── Ban / Unban ── */
+document.querySelectorAll('.btn-ban').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const row      = btn.closest('.mu-row');
+    const id       = row.dataset.id;
+    const isBanned = row.dataset.banned === '1';
+    if (!confirm(`Bạn có chắc muốn ${isBanned ? 'mở khóa' : 'khóa'} tài khoản này?`)) return;
+
+    btn.disabled = true;
+    try {
+      const res  = await fetch(`/api/admin/users/${id}/ban`, { method: 'POST', credentials: 'include', headers: { 'Accept': 'application/json' } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Lỗi');
+      showToast(data.message, 'success');
+      setTimeout(() => location.reload(), 700);
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+    }
+  });
+});
+</script>
+</body>
+</html>

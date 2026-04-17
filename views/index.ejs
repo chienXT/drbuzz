@@ -1,0 +1,330 @@
+<%
+  const pageTitle  = 'Trang chủ';
+  const activePage = 'home';
+  const bodyClass  = 'theme-home-social';
+%>
+<%- include('partials/header') %>
+
+<% if (showBannedMessage) { %>
+<div class="home-alert home-alert-error">
+  <i class="fas fa-exclamation-triangle"></i>
+  <strong>Tài khoản đã bị khóa!</strong> Vui lòng liên hệ admin để được hỗ trợ.
+</div>
+<% } %>
+
+<main>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       MAIN 3-COLUMN LAYOUT
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="page-layout home-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <div class="main-content">
+      <div class="feed-panel">
+
+      <!-- Compose Box -->
+      <% if (user) { %>
+      <div class="compose-box">
+        <form id="statusForm" class="compose-form" enctype="multipart/form-data">
+          <div class="compose-box__header">
+            <div class="compose-box__identity">
+              <div class="compose-box__avatar">
+                <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="<%= user.displayName %>">
+              </div>
+              <div class="compose-box__identity-text">
+                <div class="compose-box__name"><%= user.displayName %></div>
+                <div class="compose-box__helper">Chia sẻ góc nhìn, cập nhật mới hoặc một điều thú vị hôm nay</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="compose-box__editor">
+            <textarea name="content" class="compose-box__textarea" placeholder="Có gì mới muốn chia sẻ, <%= user.displayName %>?" maxlength="2000" rows="3"></textarea>
+          </div>
+
+          <div id="statusImagePreview" class="compose-preview"></div>
+
+          <div class="compose-box__actions">
+            <div class="compose-box__actions-left">
+              <label class="compose-action" title="Thêm ảnh">
+                <i class="fas fa-image"></i> Thêm ảnh
+                <input type="file" name="images" accept="image/*" multiple id="statusImageInput" class="compose-file-input">
+              </label>
+            </div>
+
+            <div class="compose-box__actions-right">
+              <span class="compose-char-count"><span id="statusCharCount">0</span>/2000</span>
+              <button type="submit" class="btn btn-primary btn-sm compose-box__submit" id="statusSubmitBtn">
+                <i class="fas fa-paper-plane"></i> Đăng trạng thái
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+      <% } %>
+
+      <% if (weeklyTopPosts && weeklyTopPosts.length) { %>
+      <section class="home-featured" aria-label="Bài viết nổi bật">
+        <div class="home-featured__head">
+          <h2 class="home-featured__title"><i class="fas fa-bolt"></i> Bài viết nổi bật</h2>
+          <a href="/?sort=popular" class="home-featured__more">Xem thêm</a>
+        </div>
+        <button type="button" class="home-featured__nav home-featured__nav--prev" data-featured-nav="prev" aria-label="Xem bài nổi bật trước">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <button type="button" class="home-featured__nav home-featured__nav--next" data-featured-nav="next" aria-label="Xem bài nổi bật tiếp theo">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="home-featured__viewport" id="homeFeaturedViewport">
+          <div class="home-featured__grid">
+          <% weeklyTopPosts.forEach(function(post, idx) { %>
+            <a href="/bai-viet/<%= post._id %>" class="home-featured__item" title="<%= post.title %>">
+              <div class="home-featured__rank">#<%= idx + 1 %></div>
+              <% if (post.thumbnail || (post.images && post.images[0])) { %>
+                <div class="home-featured__thumb">
+                  <img src="<%= post.thumbnail || post.images[0] %>" alt="<%= post.title %>" loading="lazy" width="320" height="180">
+                </div>
+              <% } else { %>
+                <div class="home-featured__thumb home-featured__thumb--fallback">
+                  <i class="fas fa-feather-alt"></i>
+                </div>
+              <% } %>
+              <div class="home-featured__body">
+                <h3 class="home-featured__item-title"><%= post.title %></h3>
+                <div class="home-featured__meta">
+                  <span><i class="fas fa-fire"></i> Nổi bật tuần</span>
+                </div>
+              </div>
+            </a>
+          <% }); %>
+          </div>
+        </div>
+      </section>
+      <% } %>
+
+       <% const hasCurrentTag = (typeof currentTag !== 'undefined' && currentTag); %>
+       <div id="tagFilterAlert"
+           class="home-alert"
+           role="status"
+           aria-live="polite"
+           data-current-tag="<%= (typeof currentTag !== 'undefined' && currentTag) ? currentTag : '' %>"
+         <% if (!hasCurrentTag) { %>style="display:none;"<% } %>>
+        <i class="fas fa-hashtag"></i>
+        <strong>đang lọc</strong>
+        <a id="tagFilterValue" href="/social?tag=<%= encodeURIComponent((typeof currentTag !== 'undefined' && currentTag) ? currentTag : '') %>" class="sf-hashtag">#<%= (typeof currentTag !== 'undefined' && currentTag) ? currentTag : '' %></a>
+        <a href="/social" class="home-alert-clear-link">bỏ lọc</a>
+      </div>
+
+      <!-- Status Feed -->
+      <section class="social-feed" id="statusFeed" aria-label="Bảng tin trạng thái"
+           data-page="<%= page || 1 %>"
+           data-pages="<%= pages || 1 %>"
+               data-sort="<%= currentSort || 'smart' %>"
+           data-tag="<%= (typeof currentTag !== 'undefined' && currentTag) ? currentTag : '' %>">
+        <% if (!statuses || statuses.length === 0) { %>
+          <div class="empty-state">
+            <div class="empty-illustration"><i class="fas fa-comment-dots"></i></div>
+            <h3>Chưa có trạng thái nào</h3>
+            <p>Hãy là người đầu tiên chia sẻ trạng thái!</p>
+          </div>
+        <% } else { %>
+          <% statuses.forEach(function(status, i) { %>
+            <article class="sf-item" id="status-<%= status._id %>" data-status-id="<%= status._id %>">
+              <!-- Author Row -->
+              <div class="sf-item__head">
+                <a href="/u/<%= status.author?.username || '' %>" class="sf-avatar">
+                  <img src="<%= (status.author && status.author.avatar) ? status.author.avatar : '/images/default-avatar.svg' %>"
+                    alt="<%= status.author?.displayName || 'User' %>" loading="<%= i < 3 ? 'eager' : 'lazy' %>" width="42" height="42">
+                </a>
+                <div class="sf-author-info">
+                  <div class="sf-author-row">
+                    <a href="/u/<%= status.author?.username || '' %>" class="sf-author-name"><%= status.author ? status.author.displayName : 'Người dùng' %></a>
+                    <% if (status.author?.isAdmin) { %>
+                      <span class="sf-badge-admin"><i class="fas fa-shield-alt"></i> Admin</span>
+                    <% } %>
+                  </div>
+                  <div class="sf-meta-row">
+                    <span class="sf-time" title="<%= new Date(status.createdAt).toLocaleString('vi-VN') %>"><%= typeof formatRelativeTime === 'function' ? formatRelativeTime(status.createdAt) : new Date(status.createdAt).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) %></span>
+                    <% if (status.updatedAt && new Date(status.updatedAt).getTime() > new Date(status.createdAt).getTime()) { %>
+                      <span class="sf-edited-label">đã chỉnh sửa</span>
+                    <% } %>
+                  </div>
+                </div>
+                <% if (user && (user.isAdmin || String(user._id) === String(status.author?._id))) { %>
+                  <div class="sf-head-actions">
+                    <% if (String(user._id) === String(status.author?._id)) { %>
+                      <button class="status-edit-btn sf-more-btn" data-id="<%= status._id %>" title="Chỉnh sửa">
+                        <i class="fas fa-pen"></i>
+                      </button>
+                    <% } %>
+                    <button class="status-delete-btn sf-more-btn" data-id="<%= status._id %>" title="Xóa">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                <% } %>
+              </div>
+
+              <!-- Content -->
+              <div class="sf-item__body">
+                <p class="sf-content"><%- typeof linkifyHashtags === 'function' ? linkifyHashtags(status.content) : status.content %></p>
+                <% if (status.images && status.images.length) { %>
+                  <div class="sf-media-grid sf-media-<%= Math.min(status.images.length, 4) %>">
+                    <% status.images.slice(0, 4).forEach(function(img, imgIndex) { %>
+                      <div class="sf-media">
+                        <img src="<%= img %>" alt="Ảnh trạng thái" loading="lazy" width="300" height="220" fetchpriority="<%= i === 0 && imgIndex === 0 ? 'high' : 'auto' %>">
+                      </div>
+                    <% }); %>
+                  </div>
+                <% } %>
+              </div>
+
+              <!-- Interaction Bar (Weibo-style) -->
+              <div class="sf-item__foot">
+                <button class="sf-action sf-share-btn" data-id="<%= status._id %>" title="Chia sẻ">
+                  <i class="fas fa-retweet"></i> <span>Chia sẻ</span>
+                </button>
+                <button class="sf-action sf-comment-toggle" data-id="<%= status._id %>" title="Bình luận">
+                  <i class="far fa-comment-dots"></i> <span class="sf-comment-count"><%= status.commentCount || 0 %></span>
+                </button>
+                <button class="sf-action status-like-btn <%= status.likedByMe ? 'is-liked' : '' %>" data-status-id="<%= status._id %>" title="Thích">
+                  <i class="<%= status.likedByMe ? 'fas' : 'far' %> fa-heart"></i>
+                  <span class="status-like-count"><%= status.likes ? status.likes.length : 0 %></span>
+                </button>
+              </div>
+
+              <!-- Comments Section (hidden by default) -->
+              <div class="sf-comments" id="comments-<%= status._id %>" style="display:none">
+                <div class="sf-comments-list"></div>
+                <% if (user) { %>
+                <form class="sf-comment-form" data-status-id="<%= status._id %>">
+                  <input type="text" placeholder="Viết bình luận..." maxlength="1000" class="sf-comment-input" required>
+                  <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-paper-plane"></i></button>
+                </form>
+                <% } %>
+              </div>
+            </article>
+          <% }); %>
+        <% } %>
+      </section>
+      <div id="statusFeedSentinel" class="feed-sentinel" aria-hidden="true"></div>
+
+      <div id="statusFeedLoading" class="loading-state" style="display:none">Đang tải thêm bài viết...</div>
+
+      <!-- Pagination -->
+      <% if (pages > 1 && !(typeof currentTag !== 'undefined' && currentTag)) { %>
+        <div class="pagination">
+          <% const base = '?page='; %>
+          <% const sortParam = (currentSort !== 'newest' ? '&sort=' + encodeURIComponent(currentSort) : ''); %>
+          <% const tagParam = (typeof currentTag !== 'undefined' && currentTag ? '&tag=' + encodeURIComponent(currentTag) : ''); %>
+          <% const params = sortParam + tagParam; %>
+          <% if (page > 1) { %>
+            <a href="<%= base + (page-1) + params %>" aria-label="Trang trước"><i class="fas fa-chevron-left"></i></a>
+          <% } else { %><span class="disabled"><i class="fas fa-chevron-left"></i></span><% } %>
+          <% for (let i = 1; i <= pages; i++) { %>
+            <% if (Math.abs(i - page) <= 2 || i === 1 || i === pages) { %>
+              <% if (i === page) { %>
+                <span class="active"><%= i %></span>
+              <% } else { %>
+                <a href="<%= base + i + params %>"><%= i %></a>
+              <% } %>
+            <% } else if (Math.abs(i - page) === 3) { %>
+              <span class="disabled">…</span>
+            <% } %>
+          <% } %>
+          <% if (page < pages) { %>
+            <a href="<%= base + (page+1) + params %>" aria-label="Trang sau"><i class="fas fa-chevron-right"></i></a>
+          <% } else { %><span class="disabled"><i class="fas fa-chevron-right"></i></span><% } %>
+        </div>
+      <% } %>
+      </div>
+    </div>
+
+    <!-- Sidebar Right -->
+    <%- include('partials/sidebar-right', { hideCategories: true, sidebarClass: 'home-sidebar-right', hideProfile: true }) %>
+  </div>
+</main>
+
+<div class="modal-overlay" id="statusEditModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="statusEditTitle">
+    <div class="modal-header">
+      <span class="modal-title" id="statusEditTitle">Chỉnh sửa bài đăng</span>
+      <button class="modal-close" id="closeStatusEditModal" type="button" aria-label="Đóng">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="statusEditForm" class="status-edit-form">
+        <input type="hidden" id="statusEditId">
+        <textarea id="statusEditContent" class="status-edit-textarea" maxlength="2000" rows="5" required></textarea>
+
+        <div class="status-edit-media">
+          <div class="status-edit-media-title">Ảnh hiện có</div>
+          <div id="statusEditExistingImages" class="status-edit-grid"></div>
+
+          <div class="status-edit-media-title">Thêm ảnh mới (tối đa 4 ảnh)</div>
+          <label class="compose-action" for="statusEditImageInput">
+            <i class="fas fa-image"></i> Chọn ảnh
+          </label>
+          <input type="file" id="statusEditImageInput" accept="image/*" multiple class="compose-file-input">
+          <div id="statusEditNewImages" class="status-edit-grid"></div>
+        </div>
+
+        <div class="status-edit-actions">
+          <button type="button" class="btn btn-ghost" id="statusEditCancelBtn">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="statusEditSubmitBtn">
+            <i class="fas fa-save"></i> Lưu thay đổi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="statusDetailModal" aria-hidden="true">
+  <div class="modal status-detail-modal" role="dialog" aria-modal="true" aria-labelledby="statusDetailTitle">
+    <div class="modal-header">
+      <span class="modal-title" id="statusDetailTitle">Chi tiết trạng thái</span>
+      <button class="modal-close" id="closeStatusDetailModal" type="button" aria-label="Đóng">✕</button>
+    </div>
+    <div class="modal-body status-detail-modal__body">
+      <div id="statusDetailContent" class="status-detail-preview"></div>
+      <div class="sf-comments status-detail-comments" id="statusDetailComments">
+        <div class="status-detail-comments-head">
+          <strong id="statusDetailCommentCount">0 bình luận</strong>
+        </div>
+        <div class="sf-comments-list" id="statusDetailCommentsList"></div>
+        <% if (user) { %>
+        <form class="sf-comment-form" id="statusDetailCommentForm" data-status-id="">
+          <input type="text" placeholder="Viết bình luận..." maxlength="1000" class="sf-comment-input" id="statusDetailCommentInput" required>
+          <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-paper-plane"></i></button>
+        </form>
+        <% } else { %>
+        <div class="wb-cmt-login-prompt">
+          <button data-action="show-auth-modal" class="btn btn-primary btn-sm">Đăng nhập</button>
+          <span style="color:var(--ink-4)">để bình luận</span>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><strong style="background: linear-gradient(135deg, #dc2626, #f97316); -webkit-background-clip: text; background-clip: text; color: transparent;">🔥 DramaBuzz</strong> – Drama & giải trí 24/7 · Đăng nhập để tương tác!</p>
+  </div>
+</footer>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<% if (user) { %>
+<div id="currentUserData"
+     data-id="<%= String(user._id || user.id || '') %>"
+     data-username="<%= user.username || '' %>"
+     data-display-name="<%= user.displayName || '' %>"
+     data-avatar="<%= user.avatar || '' %>"
+     data-is-admin="<%= user.isAdmin ? 'true' : 'false' %>"
+     hidden></div>
+<% } %>
+<script src="/js/common.js?v=2026.04.16.23"></script>
+<script src="/js/index.js?v=2026.04.17.7"></script>
+</body>
+</html>

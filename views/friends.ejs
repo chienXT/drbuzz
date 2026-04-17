@@ -1,0 +1,266 @@
+<%
+  const pageTitle  = 'Bạn bè · DramaBuzz';
+  const activePage = 'friends';
+%>
+<%- include('partials/header') %>
+
+<main class="container">
+  <div class="page-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <div class="main-content">
+      <div class="feed-panel">
+        <!-- Page header -->
+        <div class="page-header">
+          <div class="page-header-content">
+            <h1 class="page-title">
+              <i class="fas fa-user-friends"></i> Danh sách bạn bè
+              <span class="badge badge-primary"><%= friendCount %></span>
+            </h1>
+          </div>
+        </div>
+
+        <!-- Search bar -->
+        <form action="/friends" method="get" class="search-bar">
+          <input type="text" name="search" class="form-input" placeholder="Tìm bạn bè..." value="<%= search %>" autofocus>
+          <button type="submit" class="btn btn-primary" aria-label="Tìm kiếm"><i class="fas fa-search"></i></button>
+        </form>
+
+        <!-- Friends list -->
+        <% if(friends && friends.length > 0){ %>
+          <div class="friends-grid">
+            <% friends.forEach(function(friend){ %>
+              <div class="friend-card">
+                <div class="friend-card-header">
+                  <a href="/u/<%= friend.username %>" class="friend-avatar-link">
+                    <div class="friend-avatar">
+                      <img src="<%= friend.avatar || '/images/default-avatar.svg' %>" alt="<%= friend.displayName %>">
+                    </div>
+                  </a>
+                  <div class="friend-card-actions">
+                    <button class="icon-btn icon-sm message-friend-btn" data-uid="<%= friend._id %>" title="Nhắn tin" aria-label="Nhắn tin cho <%= friend.displayName %>">
+                      <i class="fas fa-envelope"></i>
+                    </button>
+                    <button class="icon-btn icon-sm remove-friend-btn" data-uid="<%= friend._id %>" title="Hủy kết bạn" aria-label="Hủy kết bạn với <%= friend.displayName %>">
+                      <i class="fas fa-user-minus"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="friend-card-body">
+                  <a href="/u/<%= friend.username %>" class="friend-name">
+                    <%= friend.displayName %>
+                  </a>
+                  <div class="friend-username">@<%= friend.username %></div>
+                  
+                  <% if(friend.bio){ %>
+                    <p class="friend-bio"><%= friend.bio.slice(0, 60) %><% if(friend.bio.length > 60){%>...<%}%></p>
+                  <% } %>
+                  
+                  <div class="friend-meta">
+                    <% if(friend.followers){ %>
+                      <span><i class="fas fa-heart"></i> <%= (friend.followers || []).length %> người theo dõi</span>
+                    <% } %>
+                    <% if(friend.createdAt){ %>
+                      <span style="font-size: .75rem; color: var(--ink-4);">Kết bạn <%= new Date(friend.createdAt).toLocaleDateString('vi-VN') %></span>
+                    <% } %>
+                  </div>
+                </div>
+
+                <div class="friend-card-footer">
+                  <a href="/u/<%= friend.username %>" class="btn btn-outline btn-sm w-full">Xem hồ sơ</a>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } else if(search){ %>
+          <div class="empty-state">
+            <div class="empty-state-icon">🔍</div>
+            <h3>Không tìm thấy bạn bè</h3>
+            <p class="empty-text">Thử tìm kiếm với từ khóa khác.</p>
+            <a href="/friends" class="btn btn-secondary">← Xóa tìm kiếm</a>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <div class="empty-state-icon">😢</div>
+            <h3>Chưa có bạn bè nào</h3>
+            <p class="empty-text">Hãy ghé thăm hồ sơ của người khác và kết bạn!</p>
+            <a href="/search" class="btn btn-primary">🔍 Tìm kiếm người dùng</a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <%- include('partials/sidebar-right', { hideCategories: true, sidebarClass: 'home-sidebar-right', hideProfile: true }) %>
+  </div>
+</main>
+
+<style>
+  .friends-container-spacing { padding: 24px 0; }
+  
+  .friends-search { margin-bottom: 28px; }
+  
+  .friends-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .friend-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all var(--transition);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .friend-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+
+  .friend-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .friend-avatar-link { flex: 0 0 auto; }
+  
+  .friend-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-l);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+    overflow: hidden;
+  }
+
+  .friend-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .friend-card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .icon-sm { width: 32px; height: 32px; font-size: .75rem; }
+
+  .friend-card-body {
+    padding: 16px;
+    flex: 1;
+  }
+
+  .friend-name {
+    display: block;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+    transition: color var(--transition);
+  }
+
+  .friend-name:hover { color: var(--primary); }
+
+  .friend-username {
+    font-size: .85rem;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+  }
+
+  .friend-bio {
+    font-size: .85rem;
+    color: var(--ink-2);
+    margin: 8px 0;
+    line-height: 1.4;
+  }
+
+  .friend-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: .8rem;
+    color: var(--ink-3);
+    margin-top: 8px;
+  }
+
+  .friend-meta span { display: flex; align-items: center; gap: 4px; }
+
+  .friend-card-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .btn-sm { padding: 6px 12px; font-size: .85rem; }
+
+  .w-full { width: 100%; }
+
+  .message-friend-btn:hover { color: var(--primary); background: var(--primary-l); }
+  .remove-friend-btn:hover { color: #e41e3f; background: #fee2e2; }
+
+  @media (max-width: 768px) {
+    .friends-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .friend-card-header { padding: 12px; }
+    .friend-card-body { padding: 12px; }
+    .friend-card-footer { padding: 10px 12px; }
+  }
+
+  @media (max-width: 480px) {
+    .friends-grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; gap: 12px; }
+    .page-title { font-size: 1.3rem; }
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Message friend button
+  document.querySelectorAll('.message-friend-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const uid = this.dataset.uid;
+      // TODO: Open message modal or redirect to chat with specific user
+      window.location.href = '/messages?user=' + uid;
+    });
+  });
+
+  // Remove friend button
+  document.querySelectorAll('.remove-friend-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      if (!confirm('Bạn có chắc chắn muốn hủy kết bạn?')) return;
+      
+      const uid = this.dataset.uid;
+      try {
+        const res = await fetch('/api/friends/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: uid })
+        });
+        
+        if (res.ok) {
+          location.reload();
+        } else {
+          alert('Có lỗi xảy ra. Vui lòng thử lại.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Có lỗi xảy ra. Vui lòng thử lại.');
+      }
+    });
+  });
+});
+</script>

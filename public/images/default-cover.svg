@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 480" role="img" aria-label="Default story cover">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ecd9b8" />
+      <stop offset="1" stop-color="#caa77a" />
+    </linearGradient>
+  </defs>
+  <rect width="320" height="480" fill="url(#g)" />
+  <rect x="26" y="26" width="268" height="428" rx="18" fill="rgba(255,255,255,0.35)" />
+  <g fill="#5a3d1f" opacity="0.9">
+    <path d="M95 138h130v12H95zm0 28h130v12H95zm0 28h96v12H95z" />
+    <path d="M94 254h132a8 8 0 0 1 8 8v92a8 8 0 0 1-8 8H94a8 8 0 0 1-8-8v-92a8 8 0 0 1 8-8zm12 20v68h108v-68z"/>
+  </g>
+  <text x="160" y="418" text-anchor="middle" font-family="Georgia,serif" font-size="20" fill="#5a3d1f">Novel Cover</text>
+</svg>

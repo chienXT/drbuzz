@@ -1,0 +1,328 @@
+﻿<%
+  const pageTitle  = 'Quản lý danh mục';
+  const activePage = 'admin';
+%>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/admin.css?v=2026.04.16.01">
+<!-- MC-CATEGORIES REWRITE -->
+
+<main class="container">
+  <div class="page-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <div class="main-content" style="grid-column:2/-1">
+
+      <!-- Top bar -->
+      <div class="mu-topbar">
+        <div>
+          <h1 class="mu-title"><i class="fas fa-tags"></i> Quản lý danh mục</h1>
+          <p class="mu-subtitle">Tách danh mục riêng cho Blog và Video</p>
+        </div>
+        <button class="mu-btn mu-btn--primary" id="openAddModal">
+          <i class="fas fa-plus"></i> Thêm danh mục
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="mc-stats-row">
+        <div class="mu-stat">
+          <div class="mu-stat-icon mu-stat-icon--total"><i class="fas fa-tags"></i></div>
+          <div>
+            <div class="mu-stat-value"><%= categories.length %></div>
+            <div class="mu-stat-label">Tổng danh mục</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories grid -->
+      <div class="mu-card" style="padding:0;overflow:hidden">
+        <div class="mu-list-header">
+          <span>Danh sách (<%= categories.length %>)</span>
+        </div>
+        <div id="categoriesList" class="mc-grid">
+          <% if (!categories.length) { %>
+            <div style="padding:48px;text-align:center;color:var(--ink-4);font-size:.9rem">
+              <i class="fas fa-tags" style="font-size:2rem;display:block;margin-bottom:12px;opacity:.4"></i>
+              Chưa có danh mục nào. Hãy thêm mới!
+            </div>
+          <% } %>
+          <% categories.forEach(function(cat) { %>
+            <div class="mc-item"
+              data-id="<%= cat._id %>"
+              data-name="<%= cat.name.replace(/\"/g,'&quot;') %>"
+              data-icon="<%= cat.icon %>"
+              data-target="<%= cat.target || 'blog' %>"
+              data-color="<%= cat.color || '#fee2e2' %>">
+
+              <div class="mc-item-left">
+                <div class="mc-icon" style="background:<%= cat.color || '#fee2e2' %>">
+                  <span><%= cat.icon %></span>
+                </div>
+                <div class="mc-info">
+                  <div class="mc-name"><%= cat.name %></div>
+                  <div class="mc-slug"><i class="fas fa-layer-group"></i> <%= (cat.target || 'blog') === 'video' ? 'Video' : 'Blog' %></div>
+                  <div class="mc-slug"><i class="fas fa-link"></i> /danh-muc/<%= cat.slug %></div>
+                </div>
+              </div>
+
+              <div class="mc-item-actions">
+                <button class="mu-btn mu-btn--icon btn-edit-cat" data-id="<%= cat._id %>" title="Sửa">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="mu-btn mu-btn--icon mu-btn--danger btn-delete-cat" data-id="<%= cat._id %>" title="Xóa">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ═══ Add Modal ═══ -->
+<div class="mu-modal-overlay" id="addModal">
+  <div class="mu-modal mu-modal--sm">
+    <div class="mu-modal-header">
+      <h3 class="mu-modal-title"><i class="fas fa-plus"></i> Thêm danh mục mới</h3>
+      <button class="mu-modal-close" data-close="addModal"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="addCatForm" class="mu-modal-body">
+      <div class="mu-form-row">
+        <div class="mu-field">
+          <label class="mu-label">Tên danh mục <span class="mu-required">*</span></label>
+          <input type="text" id="addName" class="mu-input" required placeholder="Ví dụ: Drama hot">
+        </div>
+        <div class="mu-field">
+          <label class="mu-label">Loại danh mục <span class="mu-required">*</span></label>
+          <select id="addTarget" class="mu-input" required>
+            <option value="blog">Blog</option>
+            <option value="video">Video</option>
+          </select>
+        </div>
+        <div class="mu-field">
+          <label class="mu-label">Icon <span class="mu-required">*</span></label>
+          <input type="text" id="addIcon" class="mu-input" required placeholder="📂" maxlength="4">
+        </div>
+      </div>
+      <div class="mu-field">
+        <label class="mu-label">Màu nền</label>
+        <div class="mc-color-row">
+          <input type="color" id="addColor" class="mc-color-input" value="#fee2e2">
+          <div class="mc-color-preview" id="addPreview">
+            <span id="addPreviewIcon">📂</span>
+          </div>
+        </div>
+      </div>
+      <p id="addMsg" class="mu-form-msg"></p>
+      <div class="mu-modal-footer">
+        <button type="button" class="mu-btn mu-btn--ghost" data-close="addModal">Hủy</button>
+        <button type="submit" class="mu-btn mu-btn--primary" id="addSubmitBtn">
+          <i class="fas fa-plus"></i> Thêm
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ Edit Modal ═══ -->
+<div class="mu-modal-overlay" id="editModal">
+  <div class="mu-modal mu-modal--sm">
+    <div class="mu-modal-header">
+      <h3 class="mu-modal-title"><i class="fas fa-pen"></i> Sửa danh mục</h3>
+      <button class="mu-modal-close" data-close="editModal"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="editCatForm" class="mu-modal-body">
+      <input type="hidden" id="editCatId">
+      <div class="mu-form-row">
+        <div class="mu-field">
+          <label class="mu-label">Tên danh mục <span class="mu-required">*</span></label>
+          <input type="text" id="editName" class="mu-input" required>
+        </div>
+        <div class="mu-field">
+          <label class="mu-label">Loại danh mục <span class="mu-required">*</span></label>
+          <select id="editTarget" class="mu-input" required>
+            <option value="blog">Blog</option>
+            <option value="video">Video</option>
+          </select>
+        </div>
+        <div class="mu-field">
+          <label class="mu-label">Icon <span class="mu-required">*</span></label>
+          <input type="text" id="editIcon" class="mu-input" required maxlength="4">
+        </div>
+      </div>
+      <div class="mu-field">
+        <label class="mu-label">Màu nền</label>
+        <div class="mc-color-row">
+          <input type="color" id="editColor" class="mc-color-input">
+          <div class="mc-color-preview" id="editPreview">
+            <span id="editPreviewIcon"></span>
+          </div>
+        </div>
+      </div>
+      <p id="editMsg" class="mu-form-msg"></p>
+      <div class="mu-modal-footer">
+        <button type="button" class="mu-btn mu-btn--ghost" data-close="editModal">Hủy</button>
+        <button type="submit" class="mu-btn mu-btn--primary" id="editSubmitBtn">
+          <i class="fas fa-save"></i> Lưu thay đổi
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><strong>🔥 DramaBuzz</strong> – Blog giải trí & drama 24/7 · Đăng nhập để tương tác!</p>
+  </div>
+</footer>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+<script>
+'use strict';
+
+/* ── Modal helpers (reuse mu-modal-overlay pattern) ── */
+function openModal(id)  { document.getElementById(id).classList.add('mu-modal-open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('mu-modal-open'); }
+
+document.querySelectorAll('[data-close]').forEach(btn =>
+  btn.addEventListener('click', () => closeModal(btn.dataset.close))
+);
+document.querySelectorAll('.mu-modal-overlay').forEach(overlay =>
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(overlay.id); })
+);
+
+/* ── Live color preview ── */
+function syncPreview(colorId, iconId, previewId, previewIconId) {
+  const color   = document.getElementById(colorId);
+  const icon    = document.getElementById(iconId);
+  const preview = document.getElementById(previewId);
+  const prevIcon= document.getElementById(previewIconId);
+  const update  = () => {
+    preview.style.background    = color.value;
+    prevIcon.textContent        = icon.value || '📂';
+  };
+  color.addEventListener('input', update);
+  icon.addEventListener('input',  update);
+  update();
+}
+syncPreview('addColor', 'addIcon', 'addPreview', 'addPreviewIcon');
+syncPreview('editColor', 'editIcon', 'editPreview', 'editPreviewIcon');
+
+/* ── Open Add Modal ── */
+document.getElementById('openAddModal').addEventListener('click', () => {
+  document.getElementById('addName').value  = '';
+  document.getElementById('addTarget').value = 'blog';
+  document.getElementById('addIcon').value  = '📂';
+  document.getElementById('addColor').value = '#fee2e2';
+  document.getElementById('addMsg').textContent = '';
+  document.getElementById('addPreview').style.background = '#fee2e2';
+  document.getElementById('addPreviewIcon').textContent  = '📂';
+  openModal('addModal');
+});
+
+/* ── Add category ── */
+document.getElementById('addCatForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('addSubmitBtn');
+  const msg = document.getElementById('addMsg');
+  setLoading(btn, true);
+  msg.textContent = '';
+
+  try {
+    const res  = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        name:  document.getElementById('addName').value.trim(),
+        target: document.getElementById('addTarget').value,
+        icon:  document.getElementById('addIcon').value.trim(),
+        color: document.getElementById('addColor').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Lỗi khi thêm');
+    showToast('✅ Đã thêm danh mục', 'success');
+    setTimeout(() => { closeModal('addModal'); location.reload(); }, 600);
+  } catch (err) {
+    msg.textContent = '❌ ' + err.message;
+    msg.className   = 'mu-form-msg mu-form-msg--err';
+  } finally { setLoading(btn, false); }
+});
+
+/* ── Open Edit Modal ── */
+document.querySelectorAll('.btn-edit-cat').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.closest('.mc-item');
+    document.getElementById('editCatId').value       = item.dataset.id;
+    document.getElementById('editName').value        = item.dataset.name;
+    document.getElementById('editTarget').value      = item.dataset.target || 'blog';
+    document.getElementById('editIcon').value        = item.dataset.icon;
+    document.getElementById('editColor').value       = item.dataset.color;
+    document.getElementById('editPreview').style.background = item.dataset.color;
+    document.getElementById('editPreviewIcon').textContent  = item.dataset.icon;
+    document.getElementById('editMsg').textContent   = '';
+    document.getElementById('editMsg').className     = 'mu-form-msg';
+    openModal('editModal');
+  });
+});
+
+/* ── Save edit ── */
+document.getElementById('editCatForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('editSubmitBtn');
+  const msg = document.getElementById('editMsg');
+  const id  = document.getElementById('editCatId').value;
+  setLoading(btn, true);
+  msg.textContent = '';
+
+  try {
+    const res  = await fetch(`/api/categories/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        name:  document.getElementById('editName').value.trim(),
+        target: document.getElementById('editTarget').value,
+        icon:  document.getElementById('editIcon').value.trim(),
+        color: document.getElementById('editColor').value,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Lỗi cập nhật');
+    showToast('✅ Đã cập nhật danh mục', 'success');
+    setTimeout(() => { closeModal('editModal'); location.reload(); }, 600);
+  } catch (err) {
+    msg.textContent = '❌ ' + err.message;
+    msg.className   = 'mu-form-msg mu-form-msg--err';
+  } finally { setLoading(btn, false); }
+});
+
+/* ── Delete ── */
+document.querySelectorAll('.btn-delete-cat').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!confirm('Bạn có chắc muốn xóa danh mục này? Thao tác không thể hoàn tác.')) return;
+    btn.disabled = true;
+    try {
+      const res  = await fetch(`/api/categories/${btn.dataset.id}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Lỗi xóa');
+      showToast('🗑️ Đã xóa danh mục', 'success');
+      setTimeout(() => location.reload(), 600);
+    } catch (err) {
+      showToast(err.message, 'error');
+      btn.disabled = false;
+    }
+  });
+});
+</script>
+</body>
+</html>

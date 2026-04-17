@@ -1,0 +1,30 @@
+﻿/* ======================================
+   BUTTONS
+   ====================================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 20px; border-radius: 40px; font-size: .9rem; font-weight: 600;
+  border: 1.5px solid transparent; transition: all var(--transition);
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+}
+.btn:focus-visible {
+  outline: 2px solid rgba(220,38,38,.3);
+  outline-offset: 2px;
+}
+.btn-primary   { background: linear-gradient(95deg, var(--primary), var(--accent)); color: #fff; border-color: transparent; }
+.btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn-secondary { background: var(--bg); color: var(--ink-2); border-color: var(--border); }
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+.btn-ghost     { background: transparent; color: var(--ink-2); border-color: transparent; }
+.btn-ghost:hover { background: var(--bg); }
+.btn-danger    { background: #fff3e7; color: var(--primary); border-color: var(--primary-l); }
+.btn-danger:hover { background: var(--primary); color: #fff; }
+.btn-success   { background: #f0fdf4; color: #22c55e; border-color: #22c55e; }
+.btn-success:hover { background: #22c55e; color: #fff; }
+.btn-success:disabled { opacity: 0.7; cursor: not-allowed; }
+.btn-sm  { padding: 5px 14px; font-size: .82rem; border-radius: 40px; }
+.btn-lg  { padding: 12px 28px; font-size: 1rem; }
+.btn-icon { padding: 8px; border-radius: 50%; }
+.btn.w-full { width: 100%; justify-content: center; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+

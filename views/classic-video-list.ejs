@@ -1,0 +1,152 @@
+<%
+  /* ── Classic Video Listing ── */
+  const pageTitle = 'Video Classic';
+  const metaDesc  = 'DramaBuzz Classic – Xem video giải trí, phim hay';
+  const _videos  = typeof videoPosts !== 'undefined' ? videoPosts : [];
+  const _hot     = typeof hotVideos  !== 'undefined' ? hotVideos  : [];
+  const _cats    = typeof categories !== 'undefined' ? categories : [];
+  const _page    = typeof page       !== 'undefined' ? page       : 1;
+  const _pages   = typeof pages      !== 'undefined' ? pages      : 1;
+  const _q       = typeof searchQuery !== 'undefined' ? searchQuery : '';
+  const _cat     = typeof currentCategory !== 'undefined' ? currentCategory : '';
+%>
+<%- include('partials/header') %>
+<div class="classic-page">
+
+  <div class="classic-container">
+    <!-- Breadcrumb -->
+    <nav class="classic-breadcrumb">
+      <a href="/">Trang chủ</a>
+      <span class="classic-breadcrumb__sep">/</span>
+      <a href="/blog">Blog</a>
+      <span class="classic-breadcrumb__sep">/</span>
+      <span>Video</span>
+    </nav>
+
+    <h1 class="classic-page-title">
+      <% if (_q) { %>Kết quả: "<%= _q %>"
+      <% } else if (_cat) { %><%= _cat %>
+      <% } else { %>Video mới nhất<% } %>
+    </h1>
+    <p class="classic-page-subtitle">Những video giải trí, phim hay nhất</p>
+
+    <div class="classic-layout">
+      <main>
+        <% if (!_videos.length) { %>
+          <div class="classic-empty">
+            <i class="fas fa-film"></i>
+            <h3>Chưa có video nào</h3>
+            <p>Hãy quay lại sau nhé!</p>
+          </div>
+        <% } else { %>
+          <div class="classic-video-grid">
+            <% _videos.forEach(function(v) { %>
+              <a href="/blog/video/<%= v._id %>" class="classic-video-card">
+                <div class="classic-video-card__thumb">
+                  <img src="<%= v.thumbnail || v.images?.[0] || '/images/default-avatar.svg' %>"
+                       alt="<%= v.title %>" class="classic-video-card__img" loading="lazy">
+                  <div class="classic-video-card__play"><i class="fas fa-play"></i></div>
+                </div>
+                <div class="classic-video-card__body">
+                  <h3 class="classic-video-card__title"><%= v.title %></h3>
+                  <p class="classic-video-card__desc"><%= v.excerpt || '' %></p>
+                  <div class="classic-video-card__meta">
+                    <span><i class="far fa-eye"></i> <%= v.views || 0 %></span>
+                    <span><i class="far fa-calendar-alt"></i> <%= new Date(v.createdAt).toLocaleDateString('vi-VN') %></span>
+                  </div>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+
+          <% if (_pages > 1) { %>
+            <nav class="classic-pagination">
+              <% if (_page > 1) { %>
+                <a href="/blog/video?page=<%= _page - 1 %><%= _q ? '&search='+encodeURIComponent(_q) : '' %>"><i class="fas fa-chevron-left"></i></a>
+              <% } %>
+              <% for (let i = 1; i <= _pages; i++) { %>
+                <% if (i === _page) { %>
+                  <span class="active"><%= i %></span>
+                <% } else if (Math.abs(i - _page) <= 2 || i === 1 || i === _pages) { %>
+                  <a href="/blog/video?page=<%= i %><%= _q ? '&search='+encodeURIComponent(_q) : '' %>"><%= i %></a>
+                <% } else if (Math.abs(i - _page) === 3) { %>
+                  <span class="disabled">…</span>
+                <% } %>
+              <% } %>
+              <% if (_page < _pages) { %>
+                <a href="/blog/video?page=<%= _page + 1 %><%= _q ? '&search='+encodeURIComponent(_q) : '' %>"><i class="fas fa-chevron-right"></i></a>
+              <% } %>
+            </nav>
+          <% } %>
+        <% } %>
+      </main>
+
+      <!-- Sidebar -->
+      <aside class="classic-sidebar">
+        <div class="classic-sidebar__block">
+          <div class="classic-sidebar__title">Tìm video</div>
+          <form action="/blog/video" method="get" class="classic-sidebar__search">
+            <input type="text" name="search" placeholder="Nhập từ khóa..." value="<%= _q %>">
+            <button type="submit"><i class="fas fa-search"></i></button>
+          </form>
+        </div>
+
+        <!-- Hot videos -->
+        <% if (_hot.length) { %>
+          <div class="classic-sidebar__block">
+            <div class="classic-sidebar__title">Video hot</div>
+            <ul class="classic-related-list">
+              <% _hot.slice(0, 8).forEach(function(hv) { %>
+                <li>
+                  <a href="/blog/video/<%= hv._id %>" class="classic-related-item">
+                    <img src="<%= hv.thumbnail || hv.images?.[0] || '/images/default-avatar.svg' %>"
+                         alt="" class="classic-related-item__thumb" loading="lazy">
+                    <div class="classic-related-item__info">
+                      <div class="classic-related-item__title"><%= hv.title %></div>
+                      <div class="classic-related-item__meta"><i class="far fa-eye"></i> <%= hv.views || 0 %> lượt xem</div>
+                    </div>
+                  </a>
+                </li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+
+        <!-- Categories -->
+        <% if (_cats.length) { %>
+          <div class="classic-sidebar__block">
+            <div class="classic-sidebar__title">Danh mục</div>
+            <ul class="classic-sidebar__cat-list">
+              <% _cats.forEach(function(cat) { %>
+                <li class="classic-sidebar__cat-item">
+                  <a href="/blog/video?category=<%= cat._id %>" class="classic-sidebar__cat-link"><%= cat.name %></a>
+                </li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+
+        <div class="classic-sidebar__block" style="text-align:center">
+          <a href="/blog" class="classic-btn classic-btn--ghost"><i class="fas fa-pen-nib"></i> Xem Blog</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="classic-footer">
+    <div class="classic-footer__inner">
+      <div class="classic-footer__copy">&copy; <%= new Date().getFullYear() %> DramaBuzz. All rights reserved.</div>
+      <div class="classic-footer__social">
+        <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js?v=2026.04.16.23"></script>
+<script src="/js/classic.js?v=2025.06.01"></script>
+</body>
+</html>

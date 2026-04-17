@@ -1,0 +1,371 @@
+﻿<%
+  const pageTitle = post.title;
+  const metaDesc  = post.excerpt;
+  const activePage = 'post';
+  const ogType    = 'article';
+  const ogImage   = post.thumbnail || (post.images && post.images[0]) || '';
+  const canonical = `${typeof siteUrl !== 'undefined' ? siteUrl : ''}/p/${post.slug || post._id}`;
+%>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/post.css?v=2026.04.17.1">
+
+<main class="container">
+  <div class="page-layout post-page-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <!-- ═══ CENTER: Post detail ═══ -->
+    <div class="post-center-col">
+
+      <!-- Top bar: back + title + visibility -->
+      <div class="wb-topbar">
+        <a href="javascript:history.back()" class="wb-back-btn">
+          <i class="fas fa-chevron-left"></i> Quay lại
+        </a>
+        <span class="wb-topbar-title" title="<%= post.title %>">
+          <%= post.title.length > 40 ? post.title.substring(0, 40) + '…' : post.title %>
+        </span>
+        <span class="wb-visibility-badge">
+          <i class="fas fa-globe-asia"></i> Công khai
+        </span>
+      </div>
+
+      <!-- Post card -->
+      <div class="wb-card">
+
+        <!-- Author row -->
+        <div class="wb-author-row">
+          <a href="/u/<%= post.author?.username || '' %>" class="wb-author-avatar-link">
+            <div class="wb-author-avatar">
+              <% if (post.author?.avatar) { %>
+                <img src="<%= post.author.avatar %>" alt="<%= post.author?.displayName || 'User' %>" width="32" height="32" loading="lazy">
+              <% } else { %>
+                <img src="<%= (post.author && post.author.avatar) ? post.author.avatar : '/images/default-avatar.svg' %>" alt="<%= post.author?.displayName || 'User' %>" width="32" height="32" loading="lazy">
+              <% } %>
+            </div>
+          </a>
+          <div class="wb-author-info">
+            <a href="/u/<%= post.author?.username || '' %>" class="wb-author-name">
+              <%= post.author?.displayName || 'Ẩn danh' %>
+            </a>
+            <div class="wb-author-meta">
+              <span><i class="far fa-clock"></i>
+                <%= new Date(post.createdAt).toLocaleDateString('vi-VN', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) %>
+              </span>
+              <span class="wb-dot">·</span>
+              <span>từ <strong>DramaBuzz</strong></span>
+              <% if (post.views) { %>
+                <span class="wb-dot">·</span>
+                <span><i class="fas fa-eye"></i> <%= post.views.toLocaleString('vi-VN') %> lượt xem</span>
+              <% } %>
+            </div>
+          </div>
+          <% if (user && String(user._id || user.id) !== String(post.author?._id)) { %>
+            <%
+              const af = typeof authorFriendship !== 'undefined' ? authorFriendship : null;
+              let friendBtnLabel = '+ Kết bạn';
+              let friendBtnClass = 'wb-follow-btn';
+              let friendBtnDisabled = false;
+              if (af) {
+                if (af.status === 'accepted') {
+                  friendBtnLabel = '✓ Bạn bè';
+                  friendBtnClass = 'wb-follow-btn wb-follow-btn--friend';
+                  friendBtnDisabled = true;
+                } else if (af.status === 'pending') {
+                  const isSender = String(af.requester) === String(user._id || user.id);
+                  friendBtnLabel = isSender ? '⏳ Đã gửi lời mời' : '✉️ Chấp nhận';
+                  friendBtnClass = 'wb-follow-btn wb-follow-btn--pending';
+                  friendBtnDisabled = isSender;
+                }
+              }
+            %>
+            <button class="<%= friendBtnClass %>"
+              <%= friendBtnDisabled ? 'disabled' : `onclick="addFriend(this,'${post.author?._id}')"` %>>
+              <%= friendBtnLabel %>
+            </button>
+          <% } %>
+        </div>
+
+        <!-- Categories -->
+        <% if (post.categories && post.categories.length) { %>
+          <div class="wb-cats">
+            <% post.categories.forEach(function(cat) { %>
+              <a href="/?category=<%= cat._id %>" class="wb-cat-badge" style="background:<%= cat.color %>20;color:<%= cat.color %>;border-color:<%= cat.color %>40">
+                <%= cat.icon %> <%= cat.name %>
+              </a>
+            <% }); %>
+          </div>
+        <% } %>
+
+        <!-- Post title + content -->
+        <div class="wb-post-content">
+          <h1 class="wb-post-title"><%= post.title %></h1>
+          <% if (post.excerpt) { %>
+            <p class="wb-post-excerpt"><%= post.excerpt %></p>
+          <% } %>
+          <div class="wb-post-body"><%- post.content %></div>
+        </div>
+
+        <!-- Images gallery -->
+        <% const allImages = (post.images || []).filter(Boolean); %>
+          <div class="wb-featured-img">
+            <%
+              const safeImg = /^(https?:\/\/|\/uploads\/)/.test(post.thumbnail) ? post.thumbnail : 'https://picsum.photos/seed/' + post._id + '/800/500';
+            %>
+            <img src="<%= safeImg %>" 
+              alt="<%= post.title %>" 
+              width="800" 
+              height="500" 
+              loading="lazy">
+          </div>
+
+        <!-- Videos -->
+        <% if (post.videos && post.videos.length) { %>
+          <div class="wb-videos">
+            <% post.videos.forEach(function(v) {
+              const ytMatch = v.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+            %>
+              <% if (ytMatch) { %>
+                <div class="wb-video-item">
+                  <iframe src="https://www.youtube.com/embed/<%= ytMatch[1] %>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+                </div>
+              <% } else { %>
+                <div class="wb-video-item">
+                  <video controls preload="metadata">
+                    <source src="<%= v %>" type="video/mp4">
+                    Trình duyệt không hỗ trợ video.
+                  </video>
+                </div>
+              <% } %>
+            <% }); %>
+          </div>
+        <% } %>
+
+        <!-- Tags -->
+        <% if (post.tags && post.tags.length) { %>
+          <div class="wb-tags">
+            <% post.tags.forEach(function(tag) { %>
+              <a href="/?search=<%= encodeURIComponent(tag) %>" class="wb-tag">#<%= tag %></a>
+            <% }); %>
+          </div>
+        <% } %>
+
+        <div class="wb-divider"></div>
+
+        <!-- Action bar -->
+        <div class="wb-action-bar">
+          <button class="wb-action-item" id="goToComment" aria-label="Bình luận">
+            <i class="far fa-comment"></i>
+            <span id="commentCount"><%= comments ? comments.length : 0 %></span>
+          </button>
+          <% if (user) { %>
+            <button class="wb-action-item <%= post.likes && post.likes.map(String).includes(String(user._id || user.id)) ? 'wb-liked' : '' %>"
+              id="likeBtn" data-id="<%= post._id %>" aria-label="<%= post.likes && post.likes.map(String).includes(String(user._id || user.id)) ? 'Bỏ thích bài viết' : 'Thích bài viết' %>">
+              <i class="<%= post.likes && post.likes.map(String).includes(String(user._id || user.id)) ? 'fas' : 'far' %> fa-heart"></i>
+              <span id="likeCount"><%= post.likes ? post.likes.length : 0 %></span>
+            </button>
+            <button class="wb-action-item" id="bookmarkBtn" data-id="<%= post._id %>">
+              <i class="far fa-bookmark"></i> Lưu
+            </button>
+          <% } else { %>
+            <button class="wb-action-item" data-action="show-auth-modal" aria-label="Thích bài - Đăng nhập để thích">
+              <i class="far fa-heart"></i>
+              <span><%= post.likes ? post.likes.length : 0 %></span>
+            </button>
+          <% } %>
+          <button class="wb-action-item" data-action="share-post" data-title="<%= post.title.replace(/'/g, '') %>">
+            <i class="fas fa-share-alt"></i> Chia sẻ
+          </button>
+          <% if (user && (user.isAdmin || String(user._id || user.id) === String(post.author?._id))) { %>
+            <a href="/dang-bai?edit=<%= post._id %>" class="wb-action-item" title="Sửa bài viết">
+              <i class="fas fa-pen"></i> Sửa
+            </a>
+          <% } %>
+        </div>
+
+        <div class="wb-divider"></div>
+
+        <!-- Comment input -->
+        <div class="wb-cmt-input-section" id="commentFormWrap">
+          <% if (user) { %>
+            <div class="wb-cmt-input-row">
+              <div class="wb-cmt-avatar">
+                <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="">
+              </div>
+              <div class="wb-cmt-input-wrap">
+                <textarea id="commentInput" class="wb-cmt-textarea" placeholder="Viết bình luận của bạn..." rows="2"></textarea>
+                <div class="wb-cmt-input-actions">
+                  <span id="cancelReply" style="display:none;cursor:pointer;color:var(--ink-4);font-size:.82rem;align-self:center">✕ Hủy trả lời</span>
+                  <span style="flex:1"></span>
+                  <button class="wb-cmt-submit" id="submitComment">
+                    <i class="fas fa-paper-plane"></i> Bình luận
+                  </button>
+                </div>
+              </div>
+            </div>
+          <% } else { %>
+            <div class="wb-cmt-login-prompt">
+              <button data-action="show-auth-modal" class="btn btn-primary btn-sm">Đăng nhập</button>
+              <span>để viết bình luận</span>
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Sort tabs + comments -->
+        <div class="wb-cmt-section">
+          <div class="wb-sort-tabs">
+            <span class="wb-sort-tab active" data-sort="hot">Nổi bật</span>
+            <span class="wb-sort-tab" data-sort="new">Mới nhất</span>
+            <span class="wb-cmt-total"><%= comments ? comments.length : 0 %> bình luận</span>
+          </div>
+
+          <div class="wb-cmt-list" id="commentList">
+            <% if (!comments || comments.length === 0) { %>
+              <div class="wb-cmt-empty">
+                <i class="far fa-comment-dots"></i>
+                <p>Chưa có bình luận. Hãy là người đầu tiên!</p>
+              </div>
+            <% } else { %>
+              <% comments.forEach(function(c) { %>
+                <div class="wb-cmt" id="comment-<%= c._id %>">
+                  <div class="wb-cmt-avatar">
+                    <img src="<%= (c.author && c.author.avatar) ? c.author.avatar : '/images/default-avatar.svg' %>" 
+                      alt="<%= c.author?.displayName || 'User' %>" 
+                      width="32" height="32" loading="lazy">
+                  </div>
+                  <div class="wb-cmt-body">
+                    <div class="wb-cmt-name-row">
+                      <a href="/u/<%= c.author?.username || '' %>" class="wb-cmt-name"><%= c.author?.displayName || 'Ẩn danh' %></a>
+                      <span class="wb-cmt-time"><%= new Date(c.createdAt).toLocaleString('vi-VN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) %></span>
+                    </div>
+                    <div class="wb-cmt-text"><%= c.text %></div>
+                    <div class="wb-cmt-actions">
+                      <% if (user) { %>
+                        <button class="wb-cmt-btn like-comment" data-id="<%= c._id %>">
+                          <i class="far fa-heart"></i> <span><%= c.likes ? c.likes.length : 0 %></span>
+                        </button>
+                        <button class="wb-cmt-btn reply-btn" data-id="<%= c._id %>" data-name="<%= c.author?.displayName || '' %>">
+                          <i class="fas fa-reply"></i> Trả lời
+                        </button>
+                        <% if (user.isAdmin || String(user._id || user.id) === String(c.author?._id)) { %>
+                          <button class="wb-cmt-btn delete-comment" data-id="<%= c._id %>" style="color:var(--primary)">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        <% } %>
+                      <% } %>
+                    </div>
+                    <!-- Replies -->
+                    <% if (c.replies && c.replies.length) { %>
+                      <div class="wb-replies">
+                        <% c.replies.forEach(function(r, rIdx) { %>
+                          <div class="wb-cmt wb-reply<%= rIdx >= 3 ? ' wb-reply-hidden' : '' %>" id="comment-<%= r._id %>">
+                            <div class="wb-cmt-avatar wb-cmt-avatar-sm">
+                              <img src="<%= (r.author && r.author.avatar) ? r.author.avatar : '/images/default-avatar.svg' %>" 
+                                alt="<%= r.author?.displayName || 'User' %>" 
+                                width="28" height="28" loading="lazy">
+                            </div>
+                            <div class="wb-cmt-body">
+                              <div class="wb-cmt-name-row">
+                                <a href="/u/<%= r.author?.username || '' %>" class="wb-cmt-name"><%= r.author?.displayName || 'Ẩn danh' %></a>
+                                <span class="wb-cmt-time"><%= new Date(r.createdAt).toLocaleString('vi-VN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) %></span>
+                              </div>
+                              <div class="wb-cmt-text"><%= r.text %></div>
+                              <% if (user) { %>
+                                <div class="wb-cmt-actions">
+                                  <button class="wb-cmt-btn like-comment" data-id="<%= r._id %>">
+                                    <i class="far fa-heart"></i> <span><%= r.likes ? r.likes.length : 0 %></span>
+                                  </button>
+                                  <% if (user.isAdmin || String(user._id || user.id) === String(r.author?._id)) { %>
+                                    <button class="wb-cmt-btn delete-comment" data-id="<%= r._id %>" style="color:var(--primary)">
+                                      <i class="fas fa-trash"></i>
+                                    </button>
+                                  <% } %>
+                                </div>
+                              <% } %>
+                            </div>
+                          </div>
+                        <% }); %>
+                        <% if (c.replies.length > 3) { %>
+                          <button class="wb-replies-toggle" data-total="<%= c.replies.length %>">
+                            <i class="fas fa-chevron-down"></i> Xem thêm <%= c.replies.length - 3 %> trả lời
+                          </button>
+                        <% } %>
+                      </div>
+                    <% } %>
+                  </div>
+                </div>
+              <% }); %>
+            <% } %>
+          </div>
+        </div><!-- /.wb-cmt-section -->
+
+      </div><!-- /.wb-card -->
+    </div><!-- /.post-center-col -->
+
+    <!-- ═══ RIGHT sidebar ═══ -->
+    <div class="post-right-col">
+
+      <!-- Author card -->
+      <div class="sidebar-panel wb-author-card">
+        <div class="wb-ac-avatar">
+          <% if (post.author?.avatar) { %>
+            <img src="<%= post.author.avatar %>" alt="">
+          <% } else { %>
+            <img src="<%= (post.author && post.author.avatar) ? post.author.avatar : '/images/default-avatar.svg' %>" alt="">
+          <% } %>
+        </div>
+        <div class="wb-ac-name"><%= post.author?.displayName || 'Ẩn danh' %></div>
+        <% if (post.author?.bio) { %>
+          <div class="wb-ac-bio"><%= post.author.bio %></div>
+        <% } %>
+        <div class="wb-ac-stats">
+          <div class="wb-ac-stat">
+            <div class="wb-ac-stat-n"><%= post.author?.postCount || 0 %></div>
+            <div class="wb-ac-stat-l">Bài viết</div>
+          </div>
+          <div class="wb-ac-stat">
+            <div class="wb-ac-stat-n"><%= post.likes ? post.likes.length : 0 %></div>
+            <div class="wb-ac-stat-l">Lượt thích</div>
+          </div>
+          <div class="wb-ac-stat">
+            <div class="wb-ac-stat-n"><%= post.author?.commentCount || 0 %></div>
+            <div class="wb-ac-stat-l">Bình luận</div>
+          </div>
+        </div>
+        <a href="/u/<%= post.author?.username || '' %>" class="wb-ac-profile-link">
+          Xem trang cá nhân <i class="fas fa-chevron-right"></i>
+        </a>
+      </div>
+
+      <!-- Related posts -->
+      <% if (typeof related !== 'undefined' && related && related.length) { %>
+        <div class="sidebar-panel">
+          <div class="sidebar-title"><i class="fas fa-layer-group"></i> Bài liên quan</div>
+          <div class="wb-related-list">
+            <% related.slice(0, 5).forEach(function(rp, idx) { %>
+              <a href="/bai-viet/<%= rp._id %>" class="wb-related-item" title="<%= rp.title %>">
+                <div class="wb-related-rank"><%= idx + 1 %></div>
+                <div class="wb-related-text"><%= rp.title.length > 40 ? rp.title.substring(0, 40) + '…' : rp.title %></div>
+              </a>
+            <% }); %>
+          </div>
+        </div>
+      <% } %>
+
+    </div><!-- /.post-right-col -->
+
+  </div><!-- /.page-layout -->
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><strong style="background: linear-gradient(135deg, #dc2626, #f97316); -webkit-background-clip: text; background-clip: text; color: transparent;">🔥 DramaBuzz</strong> – Drama & giải trí 24/7</p>
+  </div>
+</footer>
+
+<script>window.POST_ID = '<%= post._id %>';</script>
+<% if (user) { %><script>window.CURRENT_USER = <%- JSON.stringify({ id: user._id || user.id, username: user.username, displayName: user.displayName, avatar: user.avatar, isAdmin: user.isAdmin }).replace(/</g, '\\u003c') %>;</script><% } %>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/post.js"></script>
+</body>
+</html>

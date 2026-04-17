@@ -1,0 +1,537 @@
+﻿<%
+  const pageTitle  = post ? post.title : 'Video';
+  const metaDesc   = post ? post.excerpt : 'Xem video trên DramaBuzz';
+  const activePage = 'video';
+  const ogType     = 'video.other';
+  const ogImage    = post ? (post.thumbnail || (post.images && post.images[0]) || '/css/og-default.png') : '/css/og-default.png';
+  const getYtId = (url) => {
+    if (!url) return null;
+    const m = String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  };
+  const getThumb = (p) => {
+    const ytId = getYtId(p && p.videos && p.videos[0]);
+    if (ytId) return 'https://img.youtube.com/vi/' + ytId + '/mqdefault.jpg';
+    return p.thumbnail || (p.images && p.images[0]) || '';
+  };
+  const getEmbedUrl = (url) => {
+    if (!url) return null;
+    const s = String(url).trim();
+    const yt = s.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    if (yt) return 'https://www.youtube-nocookie.com/embed/' + yt[1] + '?rel=0&modestbranding=1&playsinline=1';
+    const vimeo = s.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+    if (vimeo) return 'https://player.vimeo.com/video/' + vimeo[1];
+    const dm = s.match(/(?:dailymotion\.com\/video\/|dai\.ly\/)([A-Za-z0-9]+)/i);
+    if (dm) return 'https://www.dailymotion.com/embed/video/' + dm[1];
+    if (/\/embed\//i.test(s)) return s;
+    return null;
+  };
+  const relTime = (d) => {
+    const diff = Date.now() - new Date(d).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return 'Vừa xong';
+    if (m < 60) return m + ' phút trước';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + ' giờ trước';
+    const days = Math.floor(h / 24);
+    if (days < 30) return days + ' ngày trước';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + ' tháng trước';
+    return Math.floor(months / 12) + ' năm trước';
+  };
+
+  const sourceList = (post && post.videos && post.videos.length)
+    ? post.videos.filter(function(u){ return !!(u && String(u).trim()); })
+    : [];
+  const srcIdxRaw = (typeof preferredSourceIndex !== 'undefined') ? parseInt(preferredSourceIndex, 10) : 0;
+  const sourceIndex = sourceList.length ? Math.min(Math.max(isNaN(srcIdxRaw) ? 0 : srcIdxRaw, 0), sourceList.length - 1) : 0;
+
+  let ytVideoId = null, mainVideo = null, mainVideoType = null;
+  if (sourceList.length) {
+    const v = sourceList[sourceIndex];
+    ytVideoId = getYtId(v);
+    if (ytVideoId) {
+      mainVideoType = 'youtube';
+    } else if (/\.m3u8(\?.*)?$/i.test(v)) {
+      mainVideo = v; mainVideoType = 'hls';
+    } else if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(v) || v.startsWith('/uploads/')) {
+      mainVideo = v; mainVideoType = 'mp4';
+    } else {
+      const embedUrl = getEmbedUrl(v);
+      if (embedUrl) {
+        mainVideo = embedUrl;
+        mainVideoType = 'iframe';
+      } else {
+        mainVideo = v;
+        mainVideoType = 'mp4';
+      }
+    }
+  }
+  const hasNextSource = sourceIndex < (sourceList.length - 1);
+  const nextSourceIndex = sourceIndex + 1;
+
+  const HOT_TABS = [
+    { key: 'day', label: 'Ngày' }, { key: 'week', label: 'Tuần' },
+    { key: 'month', label: 'Tháng' }, { key: 'all', label: 'Tất cả' },
+  ];
+
+  // Find current episode index in series
+  const curIdStr = post ? String(post._id) : '';
+  const epIndex  = seriesEpisodes ? seriesEpisodes.findIndex(function(e){ return String(e._id) === curIdStr; }) : -1;
+%>
+<script>window.__videoPageForceDark = true;</script>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/video.css?v=2026.04.16.01">
+
+<div class="vdp-wrap">
+<% if (!post) { %>
+  <div class="container" style="text-align:center;padding:80px 20px;color:var(--ink-4)">
+    <i class="fas fa-video" style="font-size:3rem;opacity:.3;display:block;margin-bottom:12px"></i>
+    <p>Chưa có video nào.</p>
+    <% if (user && user.isAdmin) { %>
+      <a href="/dang-video" class="btn btn-primary" style="margin-top:16px">Đăng video đầu tiên</a>
+    <% } %>
+  </div>
+<% } else { %>
+<div class="container vdp-body">
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="vdp-main">
+
+    <!-- Player -->
+    <div class="vdp-player" id="vdpPlayer">
+      <% if (mainVideoType === 'youtube' && ytVideoId) { %>
+        <div id="ytPlayerEl"></div>
+        <div id="ytFallback">
+          <img src="https://img.youtube.com/vi/<%= ytVideoId %>/hqdefault.jpg" alt="" class="vdp-fb-bg">
+          <div class="vdp-fb-body">
+            <i class="fab fa-youtube"></i>
+            <p>Nguồn video hiện chặn nhúng trên website này.</p>
+            <% if (hasNextSource) { %>
+              <a href="/video/<%= post._id %>?hot=<%= hotPeriod || 'all' %>&src=<%= nextSourceIndex %>" class="vdp-fb-btn" id="tryNextSourceBtn">
+                <i class="fas fa-random"></i> Thử nguồn kế tiếp
+              </a>
+            <% } %>
+          </div>
+        </div>
+      <% } else if (mainVideoType === 'hls' && mainVideo) { %>
+        <video id="stdVideoEl" controls playsinline preload="metadata" data-hls-src="<%= mainVideo %>"></video>
+      <% } else if (mainVideoType === 'iframe' && mainVideo) { %>
+        <iframe src="<%= mainVideo %>" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <% } else if (mainVideo) { %>
+        <video id="stdVideoEl" controls playsinline preload="metadata">
+          <source src="<%= mainVideo %>">
+        </video>
+      <% } else { %>
+        <div class="vdp-no-video">
+          <i class="fas fa-film"></i>
+          <p>Không tìm thấy nguồn phát trực tiếp.</p>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="vdp-cinema-meta">
+      <div class="vdp-server-box">
+        <% if (sourceList.length) { %>
+          <form class="vdp-server-form" action="/video/<%= post._id %>" method="get">
+            <input type="hidden" name="hot" value="<%= hotPeriod || 'all' %>">
+            <% sourceList.forEach(function(src, idx) { %>
+              <button type="submit" name="src" value="<%= idx %>" class="vdp-server-btn<%= idx === sourceIndex ? ' active' : '' %>">
+                #Máy Chủ <%= idx + 1 %>
+              </button>
+            <% }); %>
+          </form>
+        <% } else { %>
+          <div class="vdp-server-empty"><i class="fas fa-info-circle"></i> Chưa có máy chủ phát</div>
+        <% } %>
+      </div>
+
+      <div class="vdp-rating-box" id="vdpRating" data-post-id="<%= post ? String(post._id) : '' %>">
+        <div class="vdp-rating-title">Đánh giá phim</div>
+        <div class="vdp-rating-main">
+          <div class="vdp-rating-stars" role="group" aria-label="Đánh giá từ 1 đến 10 sao">
+            <% for (let i = 1; i <= 10; i++) { %>
+              <button type="button" class="vdp-star" data-value="<%= i %>" aria-label="<%= i %> sao"><i class="far fa-star"></i></button>
+            <% } %>
+          </div>
+          <div class="vdp-rating-score" id="vdpRatingScore">0.0 / 10 (0 đánh giá)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vdp-ctrl-bar">
+      <div class="vdp-ctrl-nav">
+        <% if (prevPost) { %>
+          <a href="/video/<%= prevPost._id %>" class="vdp-ctrl-btn"><i class="fas fa-step-backward"></i> Tập trước</a>
+        <% } else { %>
+          <span class="vdp-ctrl-btn disabled"><i class="fas fa-step-backward"></i> Tập trước</span>
+        <% } %>
+        <% if (nextPost) { %>
+          <a href="/video/<%= nextPost._id %>" class="vdp-ctrl-btn">Tập tiếp theo <i class="fas fa-step-forward"></i></a>
+        <% } else { %>
+          <span class="vdp-ctrl-btn disabled">Tập tiếp theo <i class="fas fa-step-forward"></i></span>
+        <% } %>
+      </div>
+      <div class="vdp-ctrl-actions">
+        <button class="vdp-ctrl-btn" id="expandBtn" title="Mở rộng"><i class="fas fa-expand-alt"></i> Mở rộng</button>
+        <button class="vdp-ctrl-btn" id="lightsBtn"><i class="fas fa-moon"></i> Tắt đèn</button>
+        <span class="vdp-ctrl-views"><i class="fas fa-eye"></i> <%= post.views ? post.views.toLocaleString('vi-VN') : '0' %> lượt xem</span>
+      </div>
+    </div>
+
+    <!-- Show info bar -->
+    <div class="vdp-info-bar">
+      <div class="vdp-info-icon"><i class="fas fa-bookmark"></i></div>
+      <div class="vdp-info-title"><%= post.title %></div>
+      <% if (user && (user.isAdmin || String(user._id || user.id) === String(post.author && post.author._id))) { %>
+        <a href="/dang-video?edit=<%= post._id %>" class="vdp-edit-btn"><i class="fas fa-pen"></i></a>
+        <button type="button" class="vdp-delete-btn" id="deleteVideoBtn" title="Xóa video"><i class="fas fa-trash"></i></button>
+      <% } %>
+    </div>
+
+    <!-- Excerpt toggle -->
+    <% if (post.excerpt) { %>
+    <div class="vdp-excerpt-bar" id="excerptBar">
+      <div class="vdp-excerpt-text" id="excerptText"><%= post.excerpt %></div>
+      <button class="vdp-excerpt-toggle" id="excerptToggle">
+        <i class="fas fa-chevron-down"></i> Nội dung phim
+      </button>
+    </div>
+    <% } %>
+
+    <!-- Action bar -->
+    <div class="vdp-action-bar">
+      <% if (user) { %>
+        <button class="vdp-action-btn<%= post.likes && post.likes.map(String).includes(String(user._id||user.id)) ? ' liked' : '' %>" id="likeBtn" data-id="<%= post._id %>">
+          <i class="<%= post.likes && post.likes.map(String).includes(String(user._id||user.id)) ? 'fas' : 'far' %> fa-heart"></i>
+          <span id="likeCount"><%= post.likes ? post.likes.length : 0 %></span>
+        </button>
+        <button class="vdp-action-btn" id="bookmarkBtn" data-id="<%= post._id %>">
+          <i class="far fa-bookmark"></i> Lưu
+        </button>
+      <% } else { %>
+        <button class="vdp-action-btn" data-action="show-auth-modal">
+          <i class="far fa-heart"></i> <span><%= post.likes ? post.likes.length : 0 %></span>
+        </button>
+      <% } %>
+      <button class="vdp-action-btn" id="goToComment">
+        <i class="far fa-comment"></i> <%= comments ? comments.length : 0 %>
+      </button>
+      <button class="vdp-action-btn" data-action="share-post" data-title="<%= post.title.replace(/'/g,'') %>">
+        <i class="fas fa-share-alt"></i> Chia sẻ
+      </button>
+    </div>
+
+    <!-- Episode list (same series) -->
+    <% if (seriesEpisodes && seriesEpisodes.length > 0) { %>
+    <div class="vdp-ep-section">
+      <div class="vdp-ep-header">
+        <% if (post.tags && post.tags.length) { %>
+          <% const subTag = post.tags.find(function(t){ return /vietsub|thuyetminh|thuyết minh|raw/i.test(t); }); %>
+          <span class="vdp-ep-tab active"><%= subTag ? subTag.toUpperCase() : 'TẬP PHIM' %></span>
+        <% } else { %>
+          <span class="vdp-ep-tab active">TẬP PHIM</span>
+        <% } %>
+      </div>
+      <div class="vdp-ep-grid" id="epGrid">
+        <% seriesEpisodes.forEach(function(ep, idx) {
+          const isCurrent = String(ep._id) === curIdStr;
+        %>
+          <a href="/video/<%= ep._id %>"
+             class="vdp-ep-btn<%= isCurrent ? ' current' : '' %>"
+             title="<%= ep.title %>">
+            <%= idx + 1 %>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Tags -->
+    <% if (post.tags && post.tags.length) { %>
+      <div class="vdp-tags">
+        <% post.tags.forEach(function(tag) { %>
+          <a href="/video?search=<%= encodeURIComponent(tag) %>" class="vdp-tag">#<%= tag %></a>
+        <% }); %>
+      </div>
+    <% } %>
+
+    <div class="vdp-divider"></div>
+
+    <!-- Comments -->
+    <div class="vdp-cmt-section" id="commentFormWrap">
+      <% if (user) { %>
+        <div class="wb-cmt-input-row">
+          <div class="wb-cmt-avatar" style="flex-shrink:0">
+            <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="">
+          </div>
+          <div class="wb-cmt-input-wrap">
+            <textarea id="commentInput" class="wb-cmt-textarea" placeholder="Viết bình luận..." rows="2"></textarea>
+            <div class="wb-cmt-input-actions">
+              <span id="cancelReply" style="display:none;cursor:pointer;color:var(--ink-4);font-size:.82rem;align-self:center">✕ Hủy trả lời</span>
+              <span style="flex:1"></span>
+              <button class="wb-cmt-submit" id="submitComment"><i class="fas fa-paper-plane"></i> Bình luận</button>
+            </div>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="wb-cmt-login-prompt">
+          <button data-action="show-auth-modal" class="btn btn-primary btn-sm">Đăng nhập</button>
+          <span style="color:var(--ink-4)">để viết bình luận</span>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="wb-cmt-section">
+      <div class="wb-sort-tabs">
+        <span class="wb-sort-tab active" data-sort="hot">Nổi bật</span>
+        <span class="wb-sort-tab" data-sort="new">Mới nhất</span>
+        <span class="wb-cmt-total"><%= comments ? comments.length : 0 %> bình luận</span>
+      </div>
+      <div class="wb-cmt-list" id="commentList">
+        <% if (!comments || comments.length === 0) { %>
+          <div class="wb-cmt-empty"><i class="far fa-comment-dots"></i><p>Chưa có bình luận.</p></div>
+        <% } else { %>
+          <% comments.forEach(function(c) { %>
+            <div class="wb-cmt" id="comment-<%= c._id %>">
+              <div class="wb-cmt-avatar">
+                <img src="<%= (c.author && c.author.avatar) ? c.author.avatar : '/images/default-avatar.svg' %>" alt="">
+              </div>
+              <div class="wb-cmt-body">
+                <div class="wb-cmt-name-row">
+                  <a href="/u/<%= c.author && c.author.username || '' %>" class="wb-cmt-name"><%= c.author && c.author.displayName || 'Ẩn danh' %></a>
+                  <span class="wb-cmt-time"><%= new Date(c.createdAt).toLocaleString('vi-VN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) %></span>
+                </div>
+                <div class="wb-cmt-text"><%= c.text %></div>
+                <div class="wb-cmt-actions">
+                  <% if (user) { %>
+                    <button class="wb-cmt-btn like-comment" data-id="<%= c._id %>"><i class="far fa-heart"></i> <span><%= c.likes ? c.likes.length : 0 %></span></button>
+                    <button class="wb-cmt-btn reply-btn" data-id="<%= c._id %>" data-name="<%= c.author && c.author.displayName || '' %>"><i class="fas fa-reply"></i> Trả lời</button>
+                    <% if (user.isAdmin || String(user._id||user.id) === String(c.author && c.author._id)) { %>
+                      <button class="wb-cmt-btn delete-comment" data-id="<%= c._id %>" style="color:var(--primary)"><i class="fas fa-trash"></i></button>
+                    <% } %>
+                  <% } %>
+                </div>
+                <% if (c.replies && c.replies.length) { %>
+                  <div class="wb-replies">
+                    <% c.replies.forEach(function(r, rIdx) { %>
+                      <div class="wb-cmt wb-reply<%= rIdx >= 3 ? ' wb-reply-hidden' : '' %>" id="comment-<%= r._id %>">
+                        <div class="wb-cmt-avatar wb-cmt-avatar-sm">
+                          <img src="<%= (r.author && r.author.avatar) ? r.author.avatar : '/images/default-avatar.svg' %>" alt="">
+                        </div>
+                        <div class="wb-cmt-body">
+                          <div class="wb-cmt-name-row">
+                            <a href="/u/<%= r.author && r.author.username || '' %>" class="wb-cmt-name"><%= r.author && r.author.displayName || 'Ẩn danh' %></a>
+                            <span class="wb-cmt-time"><%= new Date(r.createdAt).toLocaleString('vi-VN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) %></span>
+                          </div>
+                          <div class="wb-cmt-text"><%= r.text %></div>
+                          <% if (user) { %>
+                            <div class="wb-cmt-actions">
+                              <button class="wb-cmt-btn like-comment" data-id="<%= r._id %>"><i class="far fa-heart"></i> <span><%= r.likes ? r.likes.length : 0 %></span></button>
+                              <% if (user.isAdmin || String(user._id||user.id) === String(r.author && r.author._id)) { %>
+                                <button class="wb-cmt-btn delete-comment" data-id="<%= r._id %>" style="color:var(--primary)"><i class="fas fa-trash"></i></button>
+                              <% } %>
+                            </div>
+                          <% } %>
+                        </div>
+                      </div>
+                    <% }); %>
+                    <% if (c.replies.length > 3) { %>
+                      <button class="wb-replies-toggle" data-total="<%= c.replies.length %>"><i class="fas fa-chevron-down"></i> Xem thêm <%= c.replies.length-3 %> trả lời</button>
+                    <% } %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </div>
+
+  </div><!-- /.vdp-main -->
+
+  <!-- ═══ SIDEBAR NỔI BẬT ═══ -->
+  <div class="vdp-sidebar">
+    <div class="vlp-hot-panel">
+      <div class="vlp-hot-title"><span>NỔI BẬT</span></div>
+      <div class="vlp-hot-tabs">
+        <% HOT_TABS.forEach(function(ht) { %>
+          <a href="/video/<%= post._id %>?hot=<%= ht.key %>"
+             class="vlp-hot-tab<%= hotPeriod === ht.key ? ' active' : '' %>"><%= ht.label %></a>
+        <% }); %>
+      </div>
+      <div class="vlp-hot-list">
+        <% if (!hotVideos || !hotVideos.length) { %>
+          <div class="vlp-hot-empty">Chưa có dữ liệu</div>
+        <% } else { %>
+          <% hotVideos.forEach(function(hv, idx) {
+            const hvThumb = getThumb(hv);
+          %>
+            <a href="/video/<%= hv._id %>" class="vlp-hot-item">
+              <span class="vlp-hot-rank<%= idx < 3 ? ' top3' : '' %>"><%= idx + 1 %></span>
+              <div class="vlp-hot-thumb">
+                <% if (hvThumb) { %><img src="<%= hvThumb %>" alt="" loading="lazy">
+                <% } else { %><div class="vlp-hot-no-img"><i class="fas fa-play"></i></div><% } %>
+              </div>
+              <div class="vlp-hot-info">
+                <div class="vlp-hot-item-title"><%= hv.title.length > 50 ? hv.title.substring(0,50)+'…' : hv.title %></div>
+                <div class="vlp-hot-item-meta"><%= hv.author ? (hv.author.displayName || hv.author.username) : 'DramaBuzz' %></div>
+              </div>
+            </a>
+          <% }); %>
+        <% } %>
+      </div>
+    </div>
+  </div><!-- /.vdp-sidebar -->
+
+</div><!-- /.vdp-body -->
+<% } %>
+</div><!-- /.vdp-wrap -->
+
+<!-- Đèn tắt overlay -->
+<div id="lightsOverlay"></div>
+
+<div id="videoBoot"
+     data-post-id="<%= post ? String(post._id) : '' %>"
+     data-is-admin="<%= (user && user.isAdmin) ? 'true' : 'false' %>"
+     data-current-uid="<%= user ? String(user._id || user.id || '') : '' %>"
+     data-yt-video-id="<%= ytVideoId || '' %>"
+  data-main-video-type="<%= mainVideoType || '' %>"
+  data-next-source-url="<%= (post && hasNextSource) ? ('/video/' + post._id + '?hot=' + (hotPeriod || 'all') + '&src=' + nextSourceIndex) : '' %>"
+     hidden></div>
+
+<script>
+  const _videoBoot = document.getElementById('videoBoot');
+  const POST_ID = _videoBoot ? (_videoBoot.dataset.postId || '') : '';
+  const IS_ADMIN = _videoBoot ? (_videoBoot.dataset.isAdmin === 'true') : false;
+  const CURRENT_UID = _videoBoot ? (_videoBoot.dataset.currentUid || '') : '';
+  const YT_VIDEO_ID = _videoBoot ? (_videoBoot.dataset.ytVideoId || '') : '';
+  const NEXT_SOURCE_URL = _videoBoot ? (_videoBoot.dataset.nextSourceUrl || '') : '';
+  window.POST_ID = POST_ID;
+  window.CURRENT_USER = CURRENT_UID ? { _id: CURRENT_UID, id: CURRENT_UID, isAdmin: IS_ADMIN } : null;
+</script>
+<% if (ytVideoId) { %>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+var _ytPlayer;
+function onYouTubeIframeAPIReady() {
+  _ytPlayer = new YT.Player('ytPlayerEl', {
+    videoId: YT_VIDEO_ID,
+    width: '100%', height: '100%',
+    playerVars: { autoplay: 0, rel: 0, modestbranding: 1, playsinline: 1 },
+    events: {
+      onError: function(ev) {
+        var el = document.getElementById('ytPlayerEl');
+        var fb = document.getElementById('ytFallback');
+        var msg = fb ? fb.querySelector('p') : null;
+        var code = ev && typeof ev.data !== 'undefined' ? ev.data : null;
+        if (el) el.style.display = 'none';
+        if (fb) fb.classList.add('show');
+        if (msg) {
+          if (code === 101 || code === 150) {
+            msg.textContent = 'Video này bị chủ sở hữu chặn nhúng trên website.';
+          } else if (code === 100) {
+            msg.textContent = 'Video không tồn tại hoặc đã bị đặt ở chế độ riêng tư.';
+          } else {
+            msg.textContent = 'Không thể phát video lúc này. Vui lòng thử lại hoặc đổi nguồn khác.';
+          }
+        }
+        if (NEXT_SOURCE_URL) {
+          setTimeout(function() { window.location.href = NEXT_SOURCE_URL; }, 900);
+        }
+      }
+    }
+  });
+}
+</script>
+<% } %>
+<% if (mainVideoType === 'hls') { %>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+<% } %>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/post.js"></script>
+<script src="/js/video-cinema-ui.js"></script>
+<script>
+(function() {
+  /* Xóa video */
+  var deleteBtn = document.getElementById('deleteVideoBtn');
+  if (deleteBtn && POST_ID) {
+    deleteBtn.addEventListener('click', async function() {
+      if (!confirm('Bạn có chắc muốn xóa video này? Hành động không thể hoàn tác.')) return;
+      deleteBtn.disabled = true;
+      try {
+        var res = await fetch('/api/posts/' + encodeURIComponent(POST_ID), {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json' },
+          credentials: 'include'
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Không thể xóa video');
+        if (typeof showToast === 'function') showToast('Đã xóa video', 'success');
+        setTimeout(function() { window.location.href = '/video'; }, 350);
+      } catch (err) {
+        if (typeof showToast === 'function') showToast(err.message || 'Lỗi xóa video', 'error');
+        else alert(err.message || 'Lỗi xóa video');
+        deleteBtn.disabled = false;
+      }
+    });
+  }
+
+  /* Tắt đèn */
+  var lightsOn = true;
+  var overlay  = document.getElementById('lightsOverlay');
+  var btn      = document.getElementById('lightsBtn');
+  if (btn && overlay) {
+    btn.addEventListener('click', function() {
+      lightsOn = !lightsOn;
+      overlay.classList.toggle('on', !lightsOn);
+      btn.innerHTML = lightsOn
+        ? '<i class="fas fa-moon"></i> Tắt đèn'
+        : '<i class="fas fa-sun"></i> Bật đèn';
+    });
+  }
+  /* HLS playback */
+  var hlsVideo = document.getElementById('stdVideoEl');
+  if (hlsVideo) {
+    var hlsSrc = hlsVideo.getAttribute('data-hls-src') || '';
+    if (hlsSrc) {
+      if (hlsVideo.canPlayType('application/vnd.apple.mpegurl')) {
+        hlsVideo.src = hlsSrc;
+      } else if (window.Hls && window.Hls.isSupported()) {
+        var hls = new window.Hls();
+        hls.loadSource(hlsSrc);
+        hls.attachMedia(hlsVideo);
+      }
+    }
+  }
+  /* Mở rộng player */
+  var expBtn  = document.getElementById('expandBtn');
+  var player  = document.getElementById('vdpPlayer');
+  if (expBtn && player) {
+    expBtn.addEventListener('click', function() {
+      player.classList.toggle('vdp-player--expanded');
+      expBtn.innerHTML = player.classList.contains('vdp-player--expanded')
+        ? '<i class="fas fa-compress-alt"></i> Thu nhỏ'
+        : '<i class="fas fa-expand-alt"></i> Mở rộng';
+    });
+  }
+  /* Nội dung phim toggle */
+  var exToggle = document.getElementById('excerptToggle');
+  var exText   = document.getElementById('excerptText');
+  if (exToggle && exText) {
+    exText.classList.add('collapsed');
+    exToggle.addEventListener('click', function() {
+      exText.classList.toggle('collapsed');
+      exToggle.innerHTML = exText.classList.contains('collapsed')
+        ? '<i class="fas fa-chevron-down"></i> Nội dung phim'
+        : '<i class="fas fa-chevron-up"></i> Thu gọn';
+    });
+  }
+  /* Scroll current episode into view */
+  var curEp = document.querySelector('.vdp-ep-btn.current');
+  if (curEp) { curEp.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+})();
+</script>
+</body>
+</html>

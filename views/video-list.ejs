@@ -1,0 +1,179 @@
+﻿<%
+  const pageTitle  = 'Video';
+  const metaDesc   = 'Xem các video trên DramaBuzz';
+  const activePage = 'video';
+
+  /* ── Helpers ── */
+  const relTime = (d) => {
+    const diff = Date.now() - new Date(d).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1)  return 'Vừa xong';
+    if (m < 60) return m + ' phút trước';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + ' giờ trước';
+    const days = Math.floor(h / 24);
+    if (days < 30) return days + ' ngày trước';
+    const months = Math.floor(days / 30);
+    if (months < 12) return months + ' tháng trước';
+    return Math.floor(months / 12) + ' năm trước';
+  };
+
+  const getYtId = (videos) => {
+    if (!videos || !videos[0]) return null;
+    const m = videos[0].match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : null;
+  };
+
+  const getThumb = (post) => {
+    const ytId = getYtId(post.videos);
+    if (ytId) return 'https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg';
+    return post.thumbnail || (post.images && post.images[0]) || '';
+  };
+
+  const getQualityBadge = (tags) => {
+    if (!tags || !tags.length) return null;
+    const s = tags.join(' ').toLowerCase();
+    const sub = /vietsub/.test(s) ? 'Vietsub' : /thuy[eê]t[\s-]?minh|thuyetminh/.test(s) ? 'Thuyết Minh' : /raw/.test(s) ? 'Raw' : null;
+    const q   = /4k/.test(s) ? '4K' : /fhd|1080/.test(s) ? 'FHD' : /\bhd\b/.test(s) ? 'HD' : null;
+    if (sub && q) return sub + ' - ' + q;
+    return sub || q;
+  };
+
+  const getEpNum = (title) => {
+    const m = title.match(/(?:tập|ep\.?\s*|episode\s*)(\d+)/i);
+    return m ? 'Tập ' + m[1] : null;
+  };
+
+  const DAY_TABS = [
+    { key: 'new', label: 'MỚI', sub: 'Cập nhật' },
+    { key: '1',   label: 'MON', sub: 'Thứ Hai' },
+    { key: '2',   label: 'TUE', sub: 'Thứ Ba' },
+    { key: '3',   label: 'WED', sub: 'Thứ Tư' },
+    { key: '4',   label: 'THU', sub: 'Thứ Năm' },
+    { key: '5',   label: 'FRI', sub: 'Thứ Sáu' },
+    { key: '6',   label: 'SAT', sub: 'Thứ Bảy' },
+    { key: '0',   label: 'SUN', sub: 'Chủ Nhật' },
+  ];
+  const HOT_TABS = [
+    { key: 'day',   label: 'Ngày' },
+    { key: 'week',  label: 'Tuần' },
+    { key: 'month', label: 'Tháng' },
+    { key: 'all',   label: 'Tất cả' },
+  ];
+%>
+<script>window.__videoPageForceDark = true;</script>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/video.css?v=2026.04.16.01">
+
+<div class="vlp-wrap">
+
+  <!-- Day tabs -->
+  <div class="vlp-tabs-row">
+    <div class="vlp-tabs container">
+      <% DAY_TABS.forEach(function(t) { %>
+        <a href="/video?day=<%= t.key %>&hot=<%= hotPeriod %>"
+           class="vlp-tab<%= activeDay === t.key ? ' active' : '' %>">
+          <span class="vlp-tab-main"><%= t.label %></span>
+          <span class="vlp-tab-sub"><%= t.sub %></span>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="container vlp-body">
+
+    <!-- Main grid -->
+    <div class="vlp-main">
+      <div class="vlp-section-header">
+        <span class="vlp-section-title">
+          <%= activeDay === 'new' ? 'MỚI CẬP NHẬT' : (DAY_TABS.find(function(t){return t.key===activeDay})||{}).sub || 'VIDEO' %>
+        </span>
+        <% if (user && user.isAdmin) { %>
+          <a href="/dang-video" class="vlp-add-btn"><i class="fas fa-plus"></i> Đăng video</a>
+        <% } %>
+      </div>
+
+      <% if (!videoPosts || !videoPosts.length) { %>
+        <div class="vlp-empty">
+          <i class="fas fa-video"></i>
+          <p>Không có video nào.</p>
+        </div>
+      <% } else { %>
+        <div class="vlp-grid">
+          <% videoPosts.forEach(function(vp) {
+            const thumb   = getThumb(vp);
+            const quality = getQualityBadge(vp.tags);
+            const epNum   = getEpNum(vp.title);
+            const views   = vp.views ? vp.views.toLocaleString('vi-VN') : '0';
+          %>
+            <a href="/video/<%= vp._id %>" class="vlp-card">
+              <div class="vlp-card-thumb">
+                <% if (thumb) { %>
+                  <img src="<%= thumb %>" alt="<%= vp.title %>" loading="lazy">
+                <% } else { %>
+                  <div class="vlp-card-no-img"><i class="fas fa-play"></i></div>
+                <% } %>
+                <% if (quality) { %><span class="vlp-badge-quality"><%= quality %></span><% } %>
+                <% if (epNum) { %><span class="vlp-badge-ep"><%= epNum %></span><% } %>
+                <div class="vlp-card-overlay"><i class="fas fa-play-circle"></i></div>
+              </div>
+              <div class="vlp-card-info">
+                <div class="vlp-card-title"><%= vp.title.length > 55 ? vp.title.substring(0,55)+'…' : vp.title %></div>
+                <div class="vlp-card-meta">
+                  <i class="fas fa-eye"></i> <%= views %>
+                  <span class="vlp-dot">·</span>
+                  <%= relTime(vp.createdAt) %>
+                </div>
+              </div>
+            </a>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Sidebar NỔI BẬT -->
+    <div class="vlp-sidebar">
+      <div class="vlp-hot-panel">
+        <div class="vlp-hot-title"><span>NỔI BẬT</span></div>
+        <div class="vlp-hot-tabs">
+          <% HOT_TABS.forEach(function(ht) { %>
+            <a href="/video?day=<%= activeDay %>&hot=<%= ht.key %>"
+               class="vlp-hot-tab<%= hotPeriod === ht.key ? ' active' : '' %>"><%= ht.label %></a>
+          <% }); %>
+        </div>
+        <div class="vlp-hot-list">
+          <% if (!hotVideos || !hotVideos.length) { %>
+            <div class="vlp-hot-empty">Chưa có dữ liệu</div>
+          <% } else { %>
+            <% hotVideos.forEach(function(hv, idx) {
+              const hvThumb = getThumb(hv);
+            %>
+              <a href="/video/<%= hv._id %>" class="vlp-hot-item">
+                <span class="vlp-hot-rank<%= idx < 3 ? ' top3' : '' %>"><%= idx + 1 %></span>
+                <div class="vlp-hot-thumb">
+                  <% if (hvThumb) { %><img src="<%= hvThumb %>" alt="" loading="lazy">
+                  <% } else { %><div class="vlp-hot-no-img"><i class="fas fa-play"></i></div><% } %>
+                </div>
+                <div class="vlp-hot-info">
+                  <div class="vlp-hot-item-title"><%= hv.title.length > 50 ? hv.title.substring(0,50)+'…' : hv.title %></div>
+                  <div class="vlp-hot-item-meta"><%= hv.author ? (hv.author.displayName || hv.author.username) : 'DramaBuzz' %></div>
+                </div>
+              </a>
+            <% }); %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="vlp-footer">
+  <div class="container"><p>🔥 <strong>DramaBuzz</strong> – Drama & Giải Trí 24/7</p></div>
+</footer>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+</body>
+</html>

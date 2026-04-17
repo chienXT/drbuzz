@@ -1,0 +1,259 @@
+<%
+  /* ── Classic Video Detail ── */
+  const _post     = typeof post     !== 'undefined' ? post     : {};
+  const _comments = typeof comments !== 'undefined' ? comments : [];
+  const _related  = typeof relatedVideos !== 'undefined' ? relatedVideos : [];
+  const _series   = typeof seriesEpisodes !== 'undefined' ? seriesEpisodes : [];
+  const _prev     = typeof prevPost !== 'undefined' ? prevPost : null;
+  const _next     = typeof nextPost !== 'undefined' ? nextPost : null;
+  const pageTitle = _post.title || 'Video Classic';
+  const metaDesc  = _post.excerpt || '';
+  const ogType    = 'video.other';
+  const ogImage   = _post.thumbnail || _post.images?.[0] || '';
+%>
+<%- include('partials/header') %>
+<div class="classic-page">
+
+  <div class="classic-container">
+    <!-- Breadcrumb -->
+    <nav class="classic-breadcrumb">
+      <a href="/">Trang chủ</a>
+      <span class="classic-breadcrumb__sep">/</span>
+      <a href="/blog">Blog</a>
+      <span class="classic-breadcrumb__sep">/</span>
+      <a href="/blog/video">Video</a>
+      <span class="classic-breadcrumb__sep">/</span>
+      <span><%= _post.title %></span>
+    </nav>
+
+    <div class="classic-layout">
+      <main>
+        <!-- Video Player -->
+        <div class="classic-video-player">
+          <% if (_post.videos && _post.videos.length) {
+               const videoUrl = _post.videos[0];
+               const ytMatch = videoUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+          %>
+            <% if (ytMatch) { %>
+              <iframe src="https://www.youtube-nocookie.com/embed/<%= ytMatch[1] %>"
+                      allowfullscreen loading="lazy"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+            <% } else { %>
+              <video controls preload="metadata">
+                <source src="<%= videoUrl %>" type="video/mp4">
+                Trình duyệt không hỗ trợ video.
+              </video>
+            <% } %>
+          <% } else { %>
+            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--cl-text);font-size:1.1rem">
+              <i class="fas fa-exclamation-triangle" style="margin-right:8px"></i> Video không khả dụng
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Video Info -->
+        <div class="classic-video-info">
+          <h1 class="classic-video-info__title"><%= _post.title %></h1>
+          <div class="classic-video-info__meta">
+            <span><i class="far fa-user"></i> <%= _post.author?.displayName || _post.author?.username || 'Ẩn danh' %></span>
+            <span><i class="far fa-calendar-alt"></i> <%= new Date(_post.createdAt).toLocaleDateString('vi-VN') %></span>
+            <span><i class="far fa-eye"></i> <%= _post.views || 0 %> lượt xem</span>
+            <span><i class="far fa-heart"></i> <%= _post.likes?.length || 0 %> thích</span>
+          </div>
+
+          <% if (user && (user.isAdmin || String(user._id || user.id) === String(_post.author && _post.author._id))) { %>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 14px">
+              <a href="/dang-video?edit=<%= _post._id %>" class="classic-btn classic-btn--ghost"><i class="fas fa-pen"></i> Sửa video</a>
+              <button type="button" id="classicDeleteVideoBtn" class="classic-btn" style="background:#fee2e2;color:#b91c1c;border-color:#fecaca"><i class="fas fa-trash"></i> Xóa video</button>
+            </div>
+          <% } %>
+
+          <% if (_post.categories && _post.categories.length) { %>
+            <div class="classic-post-card__cats" style="margin-bottom:16px">
+              <% _post.categories.forEach(function(cat) { %>
+                <a href="/blog/video?category=<%= cat._id || cat %>" class="classic-post-card__cat"><%= cat.name || '' %></a>
+              <% }); %>
+            </div>
+          <% } %>
+
+          <div class="classic-video-info__desc">
+            <%- _post.content %>
+          </div>
+
+          <% if (_post.tags && _post.tags.length) { %>
+            <div class="classic-article__tags">
+              <% _post.tags.forEach(function(tag) { %>
+                <a href="/blog/video?tag=<%= encodeURIComponent(tag) %>" class="classic-article__tag">#<%= tag %></a>
+              <% }); %>
+            </div>
+          <% } %>
+
+          <!-- Nav prev/next -->
+          <div style="display:flex;justify-content:space-between;margin-top:20px;gap:16px;flex-wrap:wrap">
+            <% if (_prev) { %>
+              <a href="/blog/video/<%= _prev._id %>" class="classic-btn classic-btn--ghost" style="font-size:.85rem">
+                <i class="fas fa-chevron-left"></i> <%= _prev.title %>
+              </a>
+            <% } else { %><span></span><% } %>
+            <% if (_next) { %>
+              <a href="/blog/video/<%= _next._id %>" class="classic-btn classic-btn--ghost" style="font-size:.85rem">
+                <%= _next.title %> <i class="fas fa-chevron-right"></i>
+              </a>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Comments -->
+        <section class="classic-comments" id="comments">
+          <h2 class="classic-comments__title">
+            <i class="far fa-comments"></i> Bình luận (<%= _comments.length || 0 %>)
+          </h2>
+
+          <% if (typeof user !== 'undefined' && user) { %>
+            <div class="classic-comment-form">
+              <form id="classicCommentForm" data-post-id="<%= _post._id %>">
+                <textarea name="text" placeholder="Viết bình luận..." required minlength="1" maxlength="2000"></textarea>
+                <div class="classic-comment-form__actions">
+                  <button type="submit" class="classic-btn"><i class="fas fa-paper-plane"></i> Gửi</button>
+                </div>
+              </form>
+            </div>
+          <% } else { %>
+            <p style="color:var(--cl-ink-3);font-size:.9rem;margin-bottom:16px">
+              <a href="/?login=1" style="color:var(--cl-accent)">Đăng nhập</a> để bình luận.
+            </p>
+          <% } %>
+
+          <div id="classicCommentList">
+            <% const topComments = _comments.filter(c => !c.parent);
+               const replies = _comments.filter(c => c.parent);
+            %>
+            <% topComments.forEach(function(cmt) { %>
+              <div class="classic-comment">
+                <img src="<%= cmt.author?.avatar || '/images/default-avatar.svg' %>" alt="" class="classic-comment__avatar">
+                <div class="classic-comment__body">
+                  <div class="classic-comment__header">
+                    <span class="classic-comment__name"><%= cmt.author?.displayName || cmt.author?.username || 'Ẩn danh' %></span>
+                    <span class="classic-comment__date"><%= new Date(cmt.createdAt).toLocaleDateString('vi-VN') %></span>
+                  </div>
+                  <div class="classic-comment__text"><%= cmt.text %></div>
+                  <% const childReplies = replies.filter(r => String(r.parent) === String(cmt._id) || String(r.parent?._id) === String(cmt._id)); %>
+                  <% childReplies.forEach(function(rep) { %>
+                    <div class="classic-comment" style="margin-top:12px;padding-left:0;border:none">
+                      <img src="<%= rep.author?.avatar || '/images/default-avatar.svg' %>" alt="" class="classic-comment__avatar" style="width:32px;height:32px">
+                      <div class="classic-comment__body">
+                        <div class="classic-comment__header">
+                          <span class="classic-comment__name"><%= rep.author?.displayName || rep.author?.username %></span>
+                          <span class="classic-comment__date"><%= new Date(rep.createdAt).toLocaleDateString('vi-VN') %></span>
+                        </div>
+                        <div class="classic-comment__text"><%= rep.text %></div>
+                      </div>
+                    </div>
+                  <% }); %>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        </section>
+      </main>
+
+      <!-- Sidebar -->
+      <aside class="classic-sidebar">
+        <!-- Series episodes -->
+        <% if (_series.length > 1) { %>
+          <div class="classic-sidebar__block">
+            <div class="classic-sidebar__title">Danh sách tập (<%= _series.length %>)</div>
+            <ul class="classic-related-list" style="max-height:400px;overflow-y:auto">
+              <% _series.forEach(function(ep) { %>
+                <li>
+                  <a href="/blog/video/<%= ep._id %>" class="classic-related-item" style="<%= String(ep._id) === String(_post._id) ? 'background:var(--cl-accent-bg)' : '' %>">
+                    <img src="<%= ep.thumbnail || ep.images?.[0] || '/images/default-avatar.svg' %>"
+                         alt="" class="classic-related-item__thumb" loading="lazy">
+                    <div class="classic-related-item__info">
+                      <div class="classic-related-item__title"><%= ep.title %></div>
+                      <div class="classic-related-item__meta"><i class="far fa-eye"></i> <%= ep.views || 0 %></div>
+                    </div>
+                  </a>
+                </li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+
+        <!-- Related videos -->
+        <% if (_related.length) { %>
+          <div class="classic-sidebar__block">
+            <div class="classic-sidebar__title">Video liên quan</div>
+            <ul class="classic-related-list">
+              <% _related.slice(0, 6).forEach(function(rv) { %>
+                <li>
+                  <a href="/blog/video/<%= rv._id %>" class="classic-related-item">
+                    <img src="<%= rv.thumbnail || rv.images?.[0] || '/images/default-avatar.svg' %>"
+                         alt="" class="classic-related-item__thumb" loading="lazy">
+                    <div class="classic-related-item__info">
+                      <div class="classic-related-item__title"><%= rv.title %></div>
+                      <div class="classic-related-item__meta"><i class="far fa-eye"></i> <%= rv.views || 0 %></div>
+                    </div>
+                  </a>
+                </li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+
+        <div class="classic-sidebar__block" style="text-align:center">
+          <a href="/blog/video" class="classic-btn classic-btn--ghost"><i class="fas fa-arrow-left"></i> Tất cả video</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="classic-footer">
+    <div class="classic-footer__inner">
+      <div class="classic-footer__copy">&copy; <%= new Date().getFullYear() %> DramaBuzz. All rights reserved.</div>
+      <div class="classic-footer__social">
+        <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  window.__POST_ID__ = '<%= _post._id %>';
+  window.__CAN_DELETE_VIDEO__ = <%= (user && (user.isAdmin || String(user._id || user.id) === String(_post.author && _post.author._id))) ? 'true' : 'false' %>;
+</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js?v=2026.04.16.23"></script>
+<script src="/js/classic.js?v=2025.06.01"></script>
+<script>
+(function () {
+  var canDelete = window.__CAN_DELETE_VIDEO__ === true || window.__CAN_DELETE_VIDEO__ === 'true';
+  var postId = window.__POST_ID__ || '';
+  var btn = document.getElementById('classicDeleteVideoBtn');
+  if (!canDelete || !postId || !btn) return;
+
+  btn.addEventListener('click', async function () {
+    if (!confirm('Bạn có chắc muốn xóa video này? Hành động không thể hoàn tác.')) return;
+    btn.disabled = true;
+    try {
+      var res = await fetch('/api/posts/' + encodeURIComponent(postId), {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'include'
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Không thể xóa video');
+      if (typeof showToast === 'function') showToast('Đã xóa video', 'success');
+      setTimeout(function () { window.location.href = '/blog/video'; }, 350);
+    } catch (err) {
+      if (typeof showToast === 'function') showToast(err.message || 'Lỗi xóa video', 'error');
+      else alert(err.message || 'Lỗi xóa video');
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+
+<aside class="sidebar <%= typeof sidebarClass !== 'undefined' ? sidebarClass : '' %>">
+
+  <% const profileUser = (typeof user !== 'undefined' && user) ? user : ((typeof currentUser !== 'undefined' && currentUser) ? currentUser : null); %>
+  
+  <!-- Home Sidebar Right Mode -->
+  <% if (typeof hideProfile !== 'undefined' && hideProfile && typeof sidebarClass !== 'undefined' && sidebarClass.includes('home-sidebar-right')) { %>
+    
+    <!-- Advertisement Banner -->
+    <div class="sidebar-panel ad-panel">
+      <div class="ad-banner">
+        <div class="ad-content">
+          <div class="ad-title">🎯 Quảng cáo</div>
+          <p class="ad-text">Hãy đăng bài độc quyền và nổi tiếng trên DramaBuzz!</p>
+          <% if (profileUser) { %>
+            <a href="/dang-bai" class="btn btn-primary btn-sm">Đăng bài ngay</a>
+          <% } else { %>
+            <button onclick="showAuthModal()" class="btn btn-primary btn-sm">Đăng nhập</button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Weekly Posts -->
+    <% if (typeof weeklyTopPosts !== 'undefined' && weeklyTopPosts.length) { %>
+      <div class="sidebar-panel trending-panel">
+        <div class="sidebar-title"><i class="fas fa-fire"></i> Top bài viết</div>
+        <div class="trending-list">
+          <% weeklyTopPosts.slice(0, 8).forEach(function(post, idx) { %>
+            <a href="/bai-viet/<%= post._id %>" class="trending-item" title="<%= post.title %>">
+              <div class="trending-rank"><%= idx + 1 %></div>
+              <div class="trending-text"><%= post.title.length > 35 ? post.title.substring(0, 35) + '...' : post.title %></div>
+            </a>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Call to Action -->
+    <% if (!profileUser) { %>
+      <div class="sidebar-panel cta-panel">
+        <div class="cta-content">
+          <div class="cta-icon">🔥</div>
+          <h4>Tham gia cộng đồng</h4>
+          <p>Đắm chìm trong thế giới drama & giải trí cùng hàng ngàn người dùng</p>
+          <button onclick="showAuthModal('register')" class="btn btn-primary w-full">
+            <i class="fas fa-user-plus"></i> Đăng ký miễn phí
+          </button>
+        </div>
+      </div>
+    <% } %>
+
+  <% } else { %>
+    <!-- Default Sidebar Content -->
+  <div class="sidebar-card profile-box">
+    <% if (profileUser) { %>
+      <div class="profile-avatar">
+        <img src="<%= profileUser.avatar || '/images/default-avatar.svg' %>" alt="<%= profileUser.displayName || profileUser.username %>">
+      </div>
+      <div class="profile-info">
+        <div class="profile-name"><%= profileUser.displayName || profileUser.username %></div>
+        <div class="profile-handle">@<%= profileUser.username %></div>
+      </div>
+      <p class="profile-text">Chào mừng trở lại! Khám phá bài viết mới và tương tác cùng cộng đồng.</p>
+      <div class="profile-actions">
+        <a href="/profile" class="btn btn-secondary btn-sm">Trang cá nhân</a>
+        <a href="/messages" class="btn btn-primary btn-sm">Tin nhắn</a>
+      </div>
+    <% } else { %>
+      <div class="profile-avatar profile-avatar-placeholder">👋</div>
+      <div class="profile-info">
+        <div class="profile-name">Chưa đăng nhập</div>
+        <div class="profile-handle">Tham gia ngay</div>
+      </div>
+      <p class="profile-text">Đăng nhập để lưu bài, thích và bình luận nhanh chóng.</p>
+      <button class="btn btn-primary btn-sm" id="openAuthModal"><i class="fas fa-sign-in-alt"></i> Đăng nhập / Đăng ký</button>
+    <% } %>
+  </div>
+  <% } %>
+
+  <% if (!hideCategories) { %>
+  <!-- Category filter -->
+  <div class="sidebar-card">
+    <div class="sidebar-title"><i class="fas fa-tags"></i> Danh mục</div>
+    <div class="cat-pills">
+      <a href="/social" class="cat-pill <%= typeof currentCategory === 'undefined' || !currentCategory ? 'active' : '' %>">
+        <span>📋</span> Tất cả
+      </a>
+      <% if (typeof categories !== 'undefined' && categories) { %>
+        <% categories.forEach(function(cat) { %>
+          <% const isActiveCategory = typeof currentCategory !== 'undefined' && currentCategory === String(cat._id); %>
+           <a href="/social?category=<%= cat._id %>"
+             class="cat-pill <%= isActiveCategory ? 'active cat-pill-dynamic' : '' %>"
+             style="<%= isActiveCategory ? '--cat-color:' + cat.color : '' %>">
+            <span><%= cat.icon %></span> <%= cat.name %>
+          </a>
+        <% }); %>
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+
+</aside>

@@ -1,0 +1,71 @@
+﻿<%
+  const pageTitle  = 'Chat · DramaBuzz';
+  const activePage = 'chat';
+%>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/chat.css?v=2026.04.16.01">
+
+<div class="chat-layout">
+
+  <!-- Online users sidebar -->
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      💬 Phòng chat
+      <span id="onlineCount" class="status-badge">● 0 online</span>
+    </div>
+    <div class="online-list" id="onlineList">
+      <div class="loading-panel"><div class="spinner"></div>Đang tải...</div>
+    </div>
+  </aside>
+
+  <!-- Main chat area -->
+  <div class="chat-main">
+    <div class="chat-header">
+      <div class="chat-room-info">
+        <div class="chat-room-icon">🌐</div>
+        <div>
+          <div class="chat-room-title">Phòng chat chung</div>
+          <div class="chat-room-subtitle" id="roomStatus">Đang kết nối...</div>
+        </div>
+      </div>
+      <input type="text" id="chatSearch" class="chat-search" placeholder="🔍 Tìm kiếm tin nhắn...">
+    </div>
+
+    <!-- Messages area -->
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-loading">
+        <div class="spinner" style="margin:0 auto 10px"></div>
+        Đang tải lịch sử chat...
+      </div>
+    </div>
+
+    <!-- Typing indicator -->
+    <div class="typing-indicator" id="typingIndicator" class="hidden">
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+      <span id="typingText"></span>
+    </div>
+
+    <!-- Input area -->
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chatInput" placeholder="Nhập tin nhắn..." rows="1" maxlength="500"></textarea>
+      <button class="chat-send-btn" id="sendBtn" title="Gửi (Enter)">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.CURRENT_USER = <%- JSON.stringify({
+  id:          user._id || user.id,
+  username:    user.username,
+  displayName: user.displayName,
+  avatar:      user.avatar || '',
+  isAdmin:     user.isAdmin || false
+}).replace(/</g, '\\u003c') %>;
+</script>
+<script src="/js/common.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/chat.js"></script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+﻿<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <%
+    const _title   = typeof pageTitle  !== 'undefined' && pageTitle  ? pageTitle  + ' | DramaBuzz' : 'DramaBuzz – Drama & Giải Trí';
+    const _desc    = typeof metaDesc   !== 'undefined' && metaDesc   ? metaDesc   : 'DramaBuzz – Blog giải trí & drama 24/7';
+    const _ogImg   = typeof ogImage    !== 'undefined' && ogImage    ? ogImage    : '/css/og-default.png';
+    const _canon   = typeof canonical  !== 'undefined' && canonical  ? canonical  : '';
+  %>
+  <title><%= _title %></title>
+  <meta name="description" content="<%= _desc %>">
+  <% if (_canon) { %><link rel="canonical" href="<%= _canon %>"><% } %>
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="<%= typeof ogType !== 'undefined' ? ogType : 'website' %>">
+  <meta property="og:title"       content="<%= _title %>">
+  <meta property="og:description" content="<%= _desc %>">
+  <meta property="og:image"       content="<%= _ogImg %>">
+  <% if (_canon) { %><meta property="og:url" content="<%= _canon %>"><% } %>
+  <meta property="og:site_name"   content="DramaBuzz">
+  <meta property="og:locale"      content="vi_VN">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="<%= _title %>">
+  <meta name="twitter:description" content="<%= _desc %>">
+  <meta name="twitter:image"       content="<%= _ogImg %>">
+
+  <link rel="stylesheet" href="/css/style.css?v=2026.04.17.4">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <% if(typeof extraHead!=='undefined'){%><%- extraHead %><%}%>
+</head>
+<body<% if (typeof bodyClass !== 'undefined' && bodyClass) { %> class="<%= bodyClass %>"<% } %>>
+<% const isPopupEmbed = typeof bodyClass !== 'undefined' && bodyClass && bodyClass.includes('messages-popup-embed'); %>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Auth Modal -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🔥 DramaBuzz</span>
+      <button class="modal-close" id="closeAuthModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-bar tabs-spacing">
+        <button class="tab-btn active" data-tab="login">Đăng nhập</button>
+        <button class="tab-btn" data-tab="register">Đăng ký</button>
+      </div>
+      <div class="tab-content active" id="tab-login">
+        <form class="auth-widget" id="loginForm">
+          <div class="form-group"><label class="form-label">Tên đăng nhập</label><input class="form-input" type="text" name="username" required placeholder="username"></div>
+          <div class="form-group"><label class="form-label">Mật khẩu</label><input class="form-input" type="password" name="password" required placeholder="••••••"></div>
+          <button type="submit" class="btn btn-primary w-full" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Đăng nhập</button>
+          <p id="loginError" class="form-error"></p>
+          <div style="text-align:center;margin-top:10px">
+            <a href="#" id="showForgotPassword" style="font-size:.85rem;color:var(--primary)">Quên mật khẩu?</a>
+          </div>
+        </form>
+      </div>
+      <div class="tab-content" id="tab-register">
+        <form class="auth-widget" id="registerForm">
+          <div class="form-group"><label class="form-label">Tên đăng nhập</label><input class="form-input" type="text" name="username" required placeholder="chỉ chữ, số, _"></div>
+          <div class="form-group"><label class="form-label">Tên hiển thị</label><input class="form-input" type="text" name="displayName" placeholder="Tên của bạn"></div>
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" placeholder="Email liên kết (quan trọng để khôi phục MK)"></div>
+          <div class="form-group"><label class="form-label">Mật khẩu</label><input class="form-input" type="password" name="password" required placeholder="Tối thiểu 6 ký tự"></div>
+          <button type="submit" class="btn btn-primary w-full" id="registerBtn"><i class="fas fa-user-plus"></i> Đăng ký</button>
+          <p id="registerError" class="form-error"></p>
+          <p id="registerSuccess" class="form-success"></p>
+        </form>
+      </div>
+
+      <!-- Forgot Password Steps -->
+      <div class="tab-content" id="tab-forgot" style="display:none">
+        <!-- Step 1: Nhập email -->
+        <div id="forgotStep1">
+          <h3 style="text-align:center;margin-bottom:16px;font-size:1rem">🔒 Quên mật khẩu</h3>
+          <p style="text-align:center;color:var(--ink-3);font-size:.85rem;margin-bottom:16px">Nhập email đã liên kết với tài khoản</p>
+          <form class="auth-widget" id="forgotEmailForm">
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" name="email" required placeholder="email@example.com"></div>
+            <button type="submit" class="btn btn-primary w-full"><i class="fas fa-paper-plane"></i> Gửi mã xác minh</button>
+            <p id="forgotError" class="form-error"></p>
+          </form>
+          <div style="text-align:center;margin-top:10px">
+            <a href="#" id="backToLogin" style="font-size:.85rem;color:var(--ink-3)"><i class="fas fa-arrow-left"></i> Quay lại đăng nhập</a>
+          </div>
+        </div>
+
+        <!-- Step 2: Nhập mã xác minh -->
+        <div id="forgotStep2" style="display:none">
+          <h3 style="text-align:center;margin-bottom:16px;font-size:1rem">📧 Nhập mã xác minh</h3>
+          <p style="text-align:center;color:var(--ink-3);font-size:.85rem;margin-bottom:16px">Mã 6 số đã gửi đến email của bạn</p>
+          <form class="auth-widget" id="verifyCodeForm">
+            <div class="form-group"><label class="form-label">Mã xác minh</label><input class="form-input" type="text" name="code" required placeholder="123456" maxlength="6" style="text-align:center;font-size:1.4rem;letter-spacing:6px"></div>
+            <button type="submit" class="btn btn-primary w-full"><i class="fas fa-check-circle"></i> Xác minh</button>
+            <p id="verifyError" class="form-error"></p>
+          </form>
+        </div>
+
+        <!-- Step 3: Đặt mật khẩu mới -->
+        <div id="forgotStep3" style="display:none">
+          <h3 style="text-align:center;margin-bottom:16px;font-size:1rem">🔑 Đặt mật khẩu mới</h3>
+          <form class="auth-widget" id="resetPasswordForm">
+            <div class="form-group"><label class="form-label">Mật khẩu mới</label><input class="form-input" type="password" name="newPassword" required minlength="6" placeholder="Tối thiểu 6 ký tự"></div>
+            <div class="form-group"><label class="form-label">Nhập lại mật khẩu</label><input class="form-input" type="password" name="confirmPassword" required minlength="6" placeholder="Nhập lại"></div>
+            <button type="submit" class="btn btn-primary w-full"><i class="fas fa-save"></i> Đặt mật khẩu mới</button>
+            <p id="resetError" class="form-error"></p>
+            <p id="resetSuccess" class="form-success"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (!isPopupEmbed) { %>
+<!-- HEADER -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="/social" class="logo">
+      <div class="logo-icon">🔥</div>
+      <div><span class="logo-text">DramaBuzz</span><span class="logo-sub">drama & giải trí 24/7</span></div>
+    </a>
+
+    <div class="header-center">
+      <form action="/search" method="get" class="header-search" id="headerSearchForm">
+        <input type="text" name="q" placeholder="Tìm kiếm..." class="header-search-input" autocomplete="off"
+          value="<%= typeof query!=='undefined'?query:'' %>">
+        <button type="submit" class="header-search-btn"><i class="fas fa-search"></i></button>
+      </form>
+      
+
+    </div>
+
+    <div class="header-actions">
+      <% 
+        let userData = null;
+        if (typeof user !== 'undefined' && user) userData = user;
+        else if (typeof locals !== 'undefined' && locals.currentUser) userData = locals.currentUser;
+      %>
+      
+      <!-- Action Icons Center -->
+      <div class="header-action-icons">
+        <% if(userData){ %>
+          <!-- Messages -->
+          <a href="/messages" id="dmPopupTrigger" class="icon-btn icon-button-container" title="Tin nhắn" aria-label="Tin nhắn">
+            <i class="fas fa-envelope"></i>
+            <span class="header-badge" id="dmBadge" style="display:none;opacity:1">0</span>
+          </a>
+
+          <!-- Notifications -->
+          <div class="dropdown" id="notifDropdown">
+            <button class="icon-btn icon-button-container" id="notifBtn" title="Thông báo" aria-label="Thông báo">
+              <i class="fas fa-bell"></i>
+              <span class="header-badge" id="notifBadge" style="display:none;opacity:1">0</span>
+            </button>
+            <div class="dropdown-menu notif-menu dropdown-lg">
+              <div class="dropdown-header">
+                <span>Thông báo</span>
+                <button id="readAllNotif" class="btn-link-small">Đọc tất cả</button>
+              </div>
+              <div id="notifList" class="dropdown-list">
+                <div class="loading-state">Đang tải...</div>
+              </div>
+            </div>
+          </div>
+
+        <% } %>
+      </div>
+
+      <div class="header-right">
+        <!-- Dark mode -->
+        <button class="dark-toggle" id="darkToggle" title="Đổi giao diện" aria-label="Đổi giao diện tối"><i class="fas fa-moon" id="darkIcon"></i></button>
+
+        <% if(userData && userData.isAdmin){ %>
+          <a href="/dang-bai" class="btn btn-primary btn-sm header-post-btn" title="Đăng bài"><i class="fas fa-feather-alt"></i></a>
+        <% } %>
+
+        <% if(userData){ %>
+          <!-- Avatar + dropdown -->
+          <div class="dropdown" id="userDropdown">
+            <div class="header-avatar" id="avatarBtn">
+              <img src="<%= userData.avatar || '/images/default-avatar.svg' %>" alt="<%= userData.displayName %>">
+            </div>
+            <div class="dropdown-menu">
+              <div class="dropdown-user-item">
+                <div class="user-display-name"><%= userData.displayName %></div>
+                <div class="user-username">@<%= userData.username %></div>
+              </div>
+              <a href="/u/<%= userData.username %>"><i class="fas fa-user fa-fw"></i> Trang cá nhân</a>
+              <a href="/profile"><i class="fas fa-cog fa-fw"></i> Cài đặt</a>
+              <a href="/messages"><i class="fas fa-envelope fa-fw"></i> Tin nhắn</a>
+              <a href="/profile#bookmarks"><i class="fas fa-bookmark fa-fw"></i> Đã lưu</a>
+              <% if(userData.isAdmin){%>
+                <div class="divider"></div>
+                <div class="admin-label">Admin</div>
+                <a href="/quan-ly-danh-muc"><i class="fas fa-tags fa-fw"></i> Quản lý danh mục</a>
+                <a href="/quan-ly-nguoi-dung"><i class="fas fa-users fa-fw"></i> Quản lý người dùng</a>
+                <a href="/dang-bai"><i class="fas fa-feather-alt fa-fw"></i> Đăng bài mới</a>
+              <% } %>
+              <div class="divider"></div>
+              <button id="logoutBtn"><i class="fas fa-sign-out-alt fa-fw"></i> Đăng xuất</button>
+            </div>
+          </div>
+        <% }else{ %>
+          <button class="btn btn-primary btn-sm" id="openAuthModal"><i class="fas fa-sign-in-alt"></i> Đăng nhập</button>
+        <% } %>
+
+        <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile nav -->
+<div class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav-panel">
+    <button class="mobile-nav-close" id="mobileNavClose">✕</button>
+    <a href="/search"><i class="fas fa-search fa-fw"></i> Tìm kiếm</a>
+    <% if(userData){ %>
+      <a href="/messages"><i class="fas fa-envelope fa-fw"></i> Tin nhắn</a>
+      <% if(userData.isAdmin){ %>
+        <div class="divider"></div>
+        <div style="padding:8px 12px;font-weight:700;font-size:.85rem;color:var(--primary)">Admin</div>
+        <a href="/quan-ly-danh-muc"><i class="fas fa-tags fa-fw"></i> Quản lý danh mục</a>
+        <a href="/quan-ly-nguoi-dung"><i class="fas fa-users fa-fw"></i> Quản lý người dùng</a>
+        <a href="/dang-bai"><i class="fas fa-feather-alt fa-fw"></i> Đăng bài</a>
+        <div class="divider"></div>
+      <% } %>
+      <a href="/u/<%= userData.username %>"><i class="fas fa-user fa-fw"></i> Trang cá nhân</a>
+      <a href="/profile"><i class="fas fa-cog fa-fw"></i> Cài đặt</a>
+      <div class="divider"></div>
+      <a href="#" id="mobileLogout" style="color:var(--primary)"><i class="fas fa-sign-out-alt fa-fw"></i> Đăng xuất</a>
+    <% }else{ %>
+      <a href="#" id="mobileOpenAuth"><i class="fas fa-sign-in-alt fa-fw"></i> Đăng nhập / Đăng ký</a>
+    <% } %>
+  </div>
+</div>
+
+<% if (userData) { %>
+<div id="dmPopupOverlay" class="dm-popup-overlay" aria-hidden="true">
+  <div class="dm-popup-modal" role="dialog" aria-modal="true" aria-label="Hộp tin nhắn">
+    <div class="dm-popup-header">
+      <div class="dm-popup-title"><i class="fas fa-envelope"></i> Tin nhắn</div>
+      <div class="dm-popup-actions">
+        <button type="button" id="dmPopupDockRight" class="dm-popup-icon-btn" aria-label="Neo sát mép phải" title="Neo sát mép phải"><i class="fas fa-up-right-and-down-left-from-center"></i></button>
+        <button type="button" id="dmPopupReset" class="dm-popup-icon-btn" aria-label="Đưa về mặc định" title="Đưa về mặc định"><i class="fas fa-rotate-left"></i></button>
+        <button type="button" id="dmPopupClose" class="dm-popup-close" aria-label="Đóng">✕</button>
+      </div>
+    </div>
+    <iframe id="dmPopupFrame" class="dm-popup-frame" src="/messages?popup=1" loading="lazy" referrerpolicy="same-origin"></iframe>
+    <button type="button" class="dm-popup-resize" id="dmPopupResize" aria-label="Kéo để thay đổi kích thước"></button>
+  </div>
+</div>
+<% } %>
+
+<!-- PM notification toast -->
+<div id="pmNotifToast" class="pm-toast hidden">
+  <div id="pmToastAvatar" class="avatar-toast"></div>
+  <div class="flex-1">
+    <div id="pmToastName" class="toast-name"></div>
+    <div id="pmToastPreview" class="toast-preview"></div>
+  </div>
+  <button data-action="close-pm-toast" class="btn-close">✕</button>
+</div>
+<% } %>

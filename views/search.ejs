@@ -1,0 +1,118 @@
+<%
+  const pageTitle  = query ? `Tìm kiếm: ${query}` : 'Tìm kiếm';
+  const activePage = 'search';
+%>
+<%- include('partials/header') %>
+
+<main class="container">
+  <div class="page-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <div class="main-content">
+      <div class="feed-panel">
+        <!-- Search bar -->
+        <form action="/search" method="get" class="search-bar">
+          <input type="text" name="q" class="form-input" placeholder="Tìm bài viết, người dùng..." value="<%= query %>" autofocus>
+          <button type="submit" class="btn btn-primary" aria-label="Tìm kiếm"><i class="fas fa-search"></i> Tìm</button>
+        </form>
+
+        <% if(!query){ %>
+          <div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Nhập từ khóa để tìm kiếm</h3></div>
+        <% } else if(posts.length===0 && users.length===0){ %>
+          <div class="empty-state">
+            <div class="empty-state-icon">😢</div>
+            <h3>Không tìm thấy kết quả</h3>
+            <p class="empty-text">Thử từ khóa khác hoặc kiểm tra chính tả.</p>
+            <a href="/" class="btn btn-secondary">← Về trang chủ</a>
+          </div>
+        <% } else { %>
+
+          <!-- Users section -->
+          <% if(users && users.length){ %>
+          <section class="section-spacing">
+            <h2 class="section-title">
+              👤 Người dùng (<%= users.length %>)
+            </h2>
+            <div class="search-grid">
+              <% users.forEach(function(u){ %>
+                <a href="/u/<%= u.username %>" class="user-card-link">
+                  <div class="comment-avatar avatar-lg-flex">
+                    <img src="<%= u.avatar || '/images/default-avatar.svg' %>" alt="">
+                  </div>
+                  <div class="user-card-details">
+                    <div class="user-name"><%= u.displayName %></div>
+                    <div class="username-text">@<%= u.username %></div>
+                    <% if(u.bio){ %>
+                      <div class="bio-text-truncate"><%= u.bio.slice(0,50) %></div>
+                    <% } %>
+                  </div>
+                </a>
+              <% }); %>
+            </div>
+          </section>
+          <% } %>
+
+          <!-- Posts section -->
+          <% if(posts && posts.length){ %>
+          <section>
+            <h2 class="section-title">
+              📰 Bài viết (<%= posts.length %>)
+            </h2>
+            <div class="posts-grid">
+              <% posts.forEach(function(post, i){ %>
+                <div class="<%= i===0?'post-featured':'' %>">
+                  <div class="post-card">
+                    <a href="/bai-viet/<%= post._id %>" class="post-card-link">
+                      <%
+                        const img = post.thumbnail||(post.images&&post.images[0])||'';
+                        const safeImg = /^(https?:\/\/|\/uploads\/)/.test(img)?img:'https://picsum.photos/seed/'+post._id+'/800/450';
+                      %>
+                      <img class="post-card-img" src="<%= safeImg %>" alt="<%= post.title %>" loading="lazy"
+                        data-fallback-src="https://picsum.photos/seed/<%= post._id %>/800/450">
+                      <div class="post-card-body">
+                        <div class="post-card-meta">
+                          <% if(post.categories&&post.categories.length){ %>
+                            <span class="badge badge-cat" style="background:<%= post.categories[0].color||'#fee2e2' %>"><%= post.categories[0].icon %> <%= post.categories[0].name %></span>
+                          <% } %>
+                        </div>
+                        <h3 class="post-card-title"><%= post.title %></h3>
+                        <p class="post-card-excerpt"><%= post.excerpt %></p>
+                        <div class="post-card-header">
+                          <div class="post-card-author">
+                            <div class="author-avatar avatar-md">
+                              <img src="<%= (post.author && post.author.avatar) ? post.author.avatar : '/images/default-avatar.svg' %>" alt="">
+                            </div>
+                            <a href="/u/<%= post.author?.username || '' %>" class="author-meta" style="text-decoration:none;color:inherit">
+                              <div class="author-name"><%= post.author ? post.author.displayName : 'Người dùng' %></div>
+                              <div class="author-handle"><%= post.author ? '@' + post.author.username : '' %></div>
+                            </a>
+                          </div>
+                          <span class="post-card-date"><i class="far fa-clock"></i> <%= new Date(post.createdAt).toLocaleDateString('vi-VN') %></span>
+                        </div>
+                        <div class="post-card-footer">
+                          <div class="post-stats">
+                            <span><i class="fas fa-heart"></i> <%= post.likes?post.likes.length:0 %></span>
+                            <span><i class="fas fa-eye"></i> <%= post.views||0 %></span>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          </section>
+          <% } %>
+        <% } %>
+      </div>
+    </div>
+
+    <%- include('partials/sidebar-right', { hideCategories: true, sidebarClass: 'home-sidebar-right', hideProfile: true }) %>
+  </div>
+</main>
+
+<footer class="site-footer"><div class="container"><p><strong>🔥 DramaBuzz</strong> – Blog giải trí & drama 24/7</p></div></footer>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+</body>
+</html>

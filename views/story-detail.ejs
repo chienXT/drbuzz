@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= pageTitle || story.title %> | DramaBuzz Novel</title>
+  <meta name="description" content="<%= metaDesc || story.description %>">
+  <% if (canonical) { %><link rel="canonical" href="<%= canonical %>"><% } %>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="novel-page">
+  <div class="novel-shell">
+    <header class="novel-topbar">
+      <a class="novel-brand" href="/novel"><span class="novel-brand__dot">N</span><span>DramaBuzz Novel</span></a>
+      <nav class="novel-nav" aria-label="Novel navigation">
+        <a href="/novel">Trang chu</a>
+        <a href="/stories">Thu vien truyen</a>
+        <a href="/story/<%= story.slug %>" class="active">Chi tiet</a>
+      </nav>
+    </header>
+
+    <section class="novel-panel">
+      <div class="novel-panel__body">
+        <div class="story-detail">
+          <div>
+            <img class="story-cover" src="<%= story.coverImage || '/images/default-cover.svg' %>" alt="<%= story.title %>">
+          </div>
+          <div class="story-info">
+            <h1><%= story.title %></h1>
+            <div class="story-info__meta">
+              <span>Tac gia: <strong><%= story.author %></strong></span>
+              <span>•</span>
+              <span><%= story.status === 'completed' ? 'Hoan thanh' : 'Dang ra' %></span>
+              <span>•</span>
+              <span><%= Number(story.views || 0).toLocaleString('vi-VN') %> luot doc</span>
+            </div>
+            <div class="story-card__tags">
+              <% (story.genres || []).forEach(function(genre){ %>
+                <span class="story-card__tag"><%= genre %></span>
+              <% }); %>
+            </div>
+            <p class="story-info__desc"><%= story.description || 'Chua cap nhat mo ta.' %></p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <% if (firstChapter) { %>
+                <a class="novel-btn novel-btn--primary" href="/story/<%= story.slug %>/<%= firstChapter %>">Doc tu dau</a>
+              <% } %>
+              <button class="novel-btn novel-btn--ghost" id="bookmarkBtn" type="button">Danh dau</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="novel-panel" style="margin-top:16px">
+      <div class="novel-panel__head">
+        <h2 class="novel-panel__title">Danh sach chuong</h2>
+        <div class="reader-muted"><%= chapters.length %> chuong</div>
+      </div>
+      <div class="novel-panel__body">
+        <% if (chapters && chapters.length) { %>
+          <ul class="chapter-list">
+            <% chapters.forEach(function(chapter){ %>
+              <li>
+                <a href="/story/<%= story.slug %>/<%= chapter.chapterNumber %>">
+                  <span>Chuong <%= chapter.chapterNumber %>: <%= chapter.title %></span>
+                  <span class="reader-muted"><%= new Date(chapter.createdAt).toLocaleDateString('vi-VN') %></span>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <div class="novel-empty">Truyen nay chua co chuong.</div>
+        <% } %>
+      </div>
+    </section>
+  </div>
+
+  <script src="/js/novel-common.js"></script>
+  <script>
+    (function () {
+      if (!window.NovelStore) return;
+      var btn = document.getElementById('bookmarkBtn');
+      if (!btn) return;
+
+      var story = {
+        slug: '<%= story.slug %>',
+        title: '<%- story.title.replace(/'/g, "\\'") %>',
+        author: '<%- story.author.replace(/'/g, "\\'") %>',
+        coverImage: '<%= story.coverImage || '/images/default-cover.svg' %>'
+      };
+
+      function syncState() {
+        var active = window.NovelStore.isBookmarked(story.slug);
+        btn.textContent = active ? 'Da danh dau' : 'Danh dau';
+      }
+
+      btn.addEventListener('click', function () {
+        window.NovelStore.toggleBookmark(story);
+        syncState();
+      });
+
+      syncState();
+    })();
+  </script>
+</body>
+</html>

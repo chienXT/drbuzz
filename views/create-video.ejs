@@ -1,0 +1,186 @@
+﻿<%
+  const isEdit    = typeof editPost !== 'undefined' && editPost;
+  const pageTitle = isEdit ? 'Sửa video' : 'Đăng video mới';
+  const activePage = 'video';
+%>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/post.css?v=2026.04.16.01">
+
+<main class="container">
+  <div class="page-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <div class="main-content">
+      <div class="feed-panel">
+        <div class="cp-topbar">
+          <a href="javascript:history.back()" class="cp-back-btn"><i class="fas fa-arrow-left"></i></a>
+          <h1 class="cp-title"><i class="fas fa-play-circle"></i> <%= isEdit ? 'Sửa video' : 'Đăng video mới' %></h1>
+        </div>
+
+        <div class="cp-card">
+          <form id="postForm" enctype="multipart/form-data"
+            data-edit-id="<%= isEdit ? editPost._id : '' %>">
+
+            <!-- postType hidden -->
+            <input type="hidden" name="postType" value="video">
+
+            <!-- Title -->
+            <div class="cp-field">
+              <label class="cp-label">Tiêu đề <span class="cp-required">*</span></label>
+              <input class="cp-input" type="text" name="title" required placeholder="Nhập tiêu đề video..."
+                value="<%= isEdit ? editPost.title : '' %>">
+            </div>
+
+            <!-- Excerpt / mô tả -->
+            <div class="cp-field">
+              <label class="cp-label">Mô tả <span class="cp-required">*</span></label>
+              <textarea class="cp-input cp-textarea" name="excerpt" rows="3" required
+                placeholder="Mô tả ngắn về video..."><%= isEdit ? editPost.excerpt : '' %></textarea>
+            </div>
+
+            <!-- Video URL -->
+            <div class="cp-field">
+              <label class="cp-label">Link video <span class="cp-required">*</span></label>
+              <div class="cp-url-row">
+                <input class="cp-input cp-url-input" type="url" id="videoUrlInput"
+                  placeholder="Dán URL YouTube/Vimeo/Dailymotion hoặc link video trực tiếp (MP4/HLS)...">
+                <button type="button" class="cp-url-add-btn" id="videoUrlAddBtn">
+                  <i class="fas fa-plus"></i> Thêm
+                </button>
+              </div>
+              <div class="cp-url-chips" id="videoUrlChips"></div>
+              <div id="videoUrlHiddenInputs">
+                <% if (isEdit && editPost.videos) { %>
+                  <% editPost.videos.forEach(function(v) { %>
+                    <input type="hidden" name="videoUrls[]" value="<%= v %>">
+                  <% }); %>
+                <% } %>
+              </div>
+              <p class="cp-upload-hint" style="margin-top:6px">Ưu tiên MP4/HLS hoặc URL embed hợp lệ để phát trực tiếp ổn định trên web.</p>
+            </div>
+
+            <!-- Upload file video (tuỳ chọn) -->
+            <div class="cp-field">
+              <label class="cp-label">Upload file video <span class="cp-hint-text">(tuỳ chọn)</span></label>
+              <div class="cp-upload-zone" id="videoDropZone">
+                <input type="file" name="videos" id="videoFileInput" multiple
+                  accept="video/mp4,video/webm,video/ogg,video/quicktime" hidden>
+                <div class="cp-upload-zone-inner" id="videoZoneInner">
+                  <i class="fas fa-film cp-upload-icon"></i>
+                  <p class="cp-upload-text">Kéo thả video vào đây hoặc
+                    <span class="cp-upload-link" id="videoChooseBtn">chọn từ máy</span>
+                  </p>
+                  <p class="cp-upload-hint">MP4, WEBM, OGG, MOV</p>
+                </div>
+                <div class="cp-preview-grid cp-preview-grid--video" id="videoPreviewGrid"></div>
+              </div>
+            </div>
+
+            <!-- Thumbnail ảnh bìa (tuỳ chọn) -->
+            <div class="cp-field">
+              <label class="cp-label">Ảnh bìa <span class="cp-hint-text">(tuỳ chọn)</span></label>
+              <div class="cp-upload-zone" id="imageDropZone">
+                <input type="file" name="images" id="imageFileInput"
+                  accept="image/jpeg,image/png,image/gif,image/webp" hidden>
+                <div class="cp-upload-zone-inner" id="imageZoneInner">
+                  <i class="fas fa-image cp-upload-icon"></i>
+                  <p class="cp-upload-text">Kéo thả ảnh bìa hoặc
+                    <span class="cp-upload-link" id="imageChooseBtn">chọn từ máy</span>
+                  </p>
+                  <p class="cp-upload-hint">JPG, PNG, WEBP</p>
+                </div>
+                <div class="cp-preview-grid" id="imagePreviewGrid"></div>
+              </div>
+              <% if (isEdit && editPost.images && editPost.images.length) { %>
+                <% editPost.images.forEach(function(img) { %>
+                  <input type="hidden" name="keepImages[]" value="<%= img %>">
+                <% }); %>
+              <% } %>
+            </div>
+
+            <!-- Content (tuỳ chọn - mô tả dài) -->
+            <div class="cp-field">
+              <label class="cp-label">Nội dung thêm <span class="cp-hint-text">(tuỳ chọn)</span></label>
+              <textarea class="cp-input cp-textarea cp-textarea--lg" name="content" rows="4"
+                placeholder="Thêm thông tin, nguồn, link liên quan..."><%- isEdit ? editPost.content : 'Đang cập nhật nội dung.' %></textarea>
+            </div>
+
+            <!-- Categories -->
+            <div class="cp-field">
+              <label class="cp-label">Danh mục</label>
+              <div class="cp-checkbox-grid" id="catCheckboxes">
+                <% if (typeof categories !== 'undefined') { %>
+                  <% categories.forEach(function(cat) {
+                    const checked = isEdit && editPost.categories && editPost.categories.some(c => String(c._id || c) === String(cat._id));
+                  %>
+                    <label class="cp-checkbox-label">
+                      <input type="checkbox" name="categories[]" value="<%= cat._id %>"
+                        <%= checked ? 'checked' : '' %>>
+                      <span><%= cat.icon %> <%= cat.name %></span>
+                    </label>
+                  <% }); %>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="cp-field">
+              <label class="cp-label">Tags <span class="cp-hint-text">(phân cách bởi dấu phẩy)</span></label>
+              <input class="cp-input" type="text" name="tags" placeholder="video, music, 2025..."
+                value="<%= isEdit && editPost.tags ? editPost.tags.join(', ') : '' %>">
+            </div>
+
+            <!-- Submit -->
+            <div class="cp-actions">
+              <button type="submit" class="cp-submit-btn" id="postSubmitBtn">
+                <i class="fas fa-upload"></i> <%= isEdit ? 'Lưu thay đổi' : 'Đăng video' %>
+              </button>
+            </div>
+            <p id="postFormMsg" class="form-helper-text" style="display:none"></p>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/sidebar-right', { hideCategories: true, sidebarClass: 'home-sidebar-right', hideProfile: true }) %>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><strong>🔥 DramaBuzz</strong> – Blog giải trí & drama 24/7</p>
+  </div>
+</footer>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/index.js"></script>
+<script>
+(function () {
+  /* ── Image upload zone ─────────────────────── */
+  setupUploadZone({
+    dropZone:    document.getElementById('imageDropZone'),
+    fileInput:   document.getElementById('imageFileInput'),
+    chooseBtn:   document.getElementById('imageChooseBtn'),
+    zoneInner:   document.getElementById('imageZoneInner'),
+    previewGrid: document.getElementById('imagePreviewGrid'),
+    maxFiles: 1,
+    accept: ['image/jpeg','image/png','image/gif','image/webp'],
+  });
+
+  /* ── Video upload zone ─────────────────────── */
+  setupUploadZone({
+    dropZone:    document.getElementById('videoDropZone'),
+    fileInput:   document.getElementById('videoFileInput'),
+    chooseBtn:   document.getElementById('videoChooseBtn'),
+    zoneInner:   document.getElementById('videoZoneInner'),
+    previewGrid: document.getElementById('videoPreviewGrid'),
+    maxFiles: 1,
+    accept: ['video/mp4','video/webm','video/ogg','video/quicktime'],
+    isVideo: true,
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+﻿<%
+  const pageTitle  = target.displayName + ' – DramaBuzz';
+  const activePage = '';
+%>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/profile.css?v=2026.04.16.01">
+
+<main class="container">
+  <div class="page-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <div class="main-content">
+      <div class="feed-panel">
+        <!-- Profile card -->
+        <div class="profile-card">
+          <div class="profile-cover"></div>
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar">
+              <img src="<%= target.avatar || '/images/default-avatar.svg' %>" alt="<%= target.displayName %>">
+            </div>
+          </div>
+          <div class="profile-info">
+
+            <div class="section-row">
+              <div>
+                <h1 class="profile-name"><%= target.displayName %></h1>
+                <div class="profile-username">@<%= target.username %>
+                  <% if(target.isAdmin){%><span class="badge badge-cat admin-badge">👑 Admin</span><%}%>
+                </div>
+                <% if(target.bio){%><p class="profile-bio"><%= target.bio %></p><%}%>
+                <% if(target.email){%><div class="profile-contact"><i class="fas fa-envelope"></i> <%= target.email %></div><%}%>
+              </div>
+
+              <!-- Action buttons (only show if logged in and not self) -->
+              <% if(user && !isSelf){ %>
+              <div class="profile-actions" id="profileActions">
+                <% if(friendStatus==='accepted'){ %>
+                  <a href="/messages?with=<%= target._id %>" class="btn btn-primary btn-sm" aria-label="Nhắn tin cho <%= target.displayName %>"><i class="fas fa-envelope"></i> Nhắn tin</a>
+                  <button class="btn btn-secondary btn-sm" id="unfriendBtn" data-uid="<%= target._id %>" aria-label="Hủy kết bạn"><i class="fas fa-user-minus"></i> Hủy bạn</button>
+                <% }else if(friendStatus==='pending_sent'){ %>
+                  <button class="btn btn-secondary btn-sm" id="cancelRequestBtn" data-uid="<%= target._id %>" disabled aria-label="Yêu cầu kết bạn đã gửi"><i class="fas fa-clock"></i> Đã gửi lời mời</button>
+                <% }else if(friendStatus==='pending_received'){ %>
+                  <button class="btn btn-primary btn-sm" id="acceptRequestBtn" data-uid="<%= target._id %>" aria-label="Chấp nhận yêu cầu kết bạn"><i class="fas fa-check"></i> Chấp nhận</button>
+                  <button class="btn btn-secondary btn-sm" id="declineRequestBtn" data-uid="<%= target._id %>" aria-label="Từ chối yêu cầu kết bạn"><i class="fas fa-times"></i> Từ chối</button>
+                <% }else{ %>
+                  <button class="btn btn-primary btn-sm" id="addFriendBtn" data-uid="<%= target._id %>" aria-label="Kết bạn"><i class="fas fa-user-plus"></i> Kết bạn</button>
+                <% } %>
+              </div>
+              <% } %>
+              <% if(isSelf){ %>
+                <a href="/profile" class="btn btn-secondary btn-sm" aria-label="Chỉnh sửa hồ sơ"><i class="fas fa-pen"></i> Chỉnh sửa</a>
+              <% } %>
+            </div>
+
+            <div class="profile-stats">
+              <div class="stat-item"><div class="stat-num"><%= target.postCount||0 %></div><div class="stat-label">Bài viết</div></div>
+              <div class="stat-item"><div class="stat-num"><%= target.commentCount||0 %></div><div class="stat-label">Bình luận</div></div>
+              <div class="stat-item"><div class="stat-num"><%= new Date(target.createdAt).getFullYear() %></div><div class="stat-label">Tham gia</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Posts -->
+        <div class="sidebar-card">
+          <div class="sidebar-title"><i class="fas fa-newspaper"></i> Bài viết của <%= target.displayName %></div>
+          <% if(userPosts && userPosts.length){ %>
+            <div class="profile-card-list">
+              <% userPosts.forEach(function(p){ %>
+                <a href="/bai-viet/<%= p._id %>" class="post-row-item">
+                  <%
+                    const ri = p.thumbnail||(p.images&&p.images[0])||'https://picsum.photos/seed/'+p._id+'/200/130';
+                    const safeRi = /^(https?:\/\/|\/uploads\/)/.test(ri)?ri:'https://picsum.photos/seed/'+p._id+'/200/130';
+                  %>
+                  <img src="<%= safeRi %>" loading="lazy" class="post-row-thumb" data-fallback-src="https://picsum.photos/seed/<%= p._id %>/200/130">
+                  <div class="post-row-body">
+                    <div class="post-row-title"><%= p.title %></div>
+                    <div class="post-row-meta">
+                      <span>📅 <%= new Date(p.createdAt).toLocaleDateString('vi-VN') %></span>
+                      <span>❤️ <%= p.likes?p.likes.length:0 %></span>
+                      <span>👁 <%= p.views||0 %></span>
+                    </div>
+                  </div>
+                </a>
+              <% }); %>
+            </div>
+          <% }else{ %>
+            <div class="empty-state empty-state-padding"><div class="empty-icon">🗑</div><p>Chưa có bài viết nào.</p></div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/sidebar-right', { hideCategories: true, sidebarClass: 'home-sidebar-right', hideProfile: true }) %>
+  </div>
+</main>
+
+<footer class="site-footer"><div class="container"><p><strong>🔥 DramaBuzz</strong></p></div></footer>
+
+<script>
+window.CURRENT_USER = <% if(user){ %><%- JSON.stringify({id:user._id||user.id,username:user.username,displayName:user.displayName,avatar:user.avatar||'',isAdmin:user.isAdmin}).replace(/</g, '\\u003c') %><%}else{%>null<%}%>;
+window.PROFILE_UID = '<%= target._id %>';
+
+/* Friend action handlers */
+document.getElementById('addFriendBtn')?.addEventListener('click', async function() {
+  this.disabled = true; this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+  try {
+    await api('/api/friends/request', { method:'POST', body: JSON.stringify({ recipientId: PROFILE_UID }) });
+    this.innerHTML = '<i class="fas fa-clock"></i> Đã gửi lời mời';
+    showToast('✅ Đã gửi lời mời kết bạn!', 'success');
+  } catch(e) { this.disabled=false; this.innerHTML='<i class="fas fa-user-plus"></i> Kết bạn'; showToast(e.message,'error'); }
+});
+
+document.getElementById('unfriendBtn')?.addEventListener('click', async function() {
+  if(!confirm('Hủy kết bạn?')) return;
+  try {
+    await api('/api/friends/remove', { method:'POST', body: JSON.stringify({ friendId: PROFILE_UID }) });
+    showToast('Đã hủy kết bạn','info');
+    setTimeout(()=>location.reload(), 800);
+  } catch(e) { showToast(e.message,'error'); }
+});
+
+document.getElementById('acceptRequestBtn')?.addEventListener('click', async function() {
+  console.log('Accept button clicked for user:', PROFILE_UID);
+  console.log('Current user token exists:', !!localStorage.getItem('token'));
+  
+  this.disabled = true; this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+  try {
+    console.log('Sending accept request to:', `/api/friends/accept-from/${PROFILE_UID}`);
+    const response = await fetch(`/api/friends/accept-from/${PROFILE_UID}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    
+    console.log('Response status:', response.status);
+    const data = await response.json();
+    console.log('Accept response data:', data);
+    
+    if (data.success) {
+      console.log('Accept successful, reloading page...');
+      this.innerHTML = '<i class="fas fa-check"></i> Đã chấp nhận';
+      showToast('✅ Đã chấp nhận lời mời kết bạn!', 'success');
+      
+      // Reload page after 1 second to show updated status
+      setTimeout(() => {
+        console.log('Reloading page...');
+        location.reload();
+      }, 1000);
+      
+    } else {
+      console.error('Accept failed:', data.message);
+      alert(data.message || 'Có lỗi xảy ra');
+    }
+  } catch (error) {
+    console.error('Accept error:', error);
+    alert('Có lỗi xảy ra khi chấp nhận lời mời');
+  } finally {
+    this.disabled = false;
+    this.innerHTML = '<i class="fas fa-check"></i> Chấp nhận';
+  }
+});
+
+document.getElementById('declineRequestBtn')?.addEventListener('click', async function() {
+  if(!confirm('Từ chối lời mời kết bạn?')) return;
+  this.disabled = true; this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+  try {
+    console.log('Declining friend request from user:', PROFILE_UID); // Debug log
+    
+    // Decline the request using the new API
+    const declineResponse = await api(`/api/friends/decline-from/${PROFILE_UID}`, { method:'POST' });
+    
+    console.log('Decline response:', declineResponse); // Debug log
+    
+    this.innerHTML = '<i class="fas fa-times"></i> Đã từ chối';
+    showToast('❌ Đã từ chối lời mời kết bạn!', 'info');
+    
+    // Reload page after 1 second to show updated status
+    setTimeout(() => location.reload(), 1000);
+    
+  } catch(e) { 
+    console.error('Decline friend error:', e); // Debug log
+    this.disabled = false; 
+    this.innerHTML = '<i class="fas fa-times"></i> Từ chối';
+    showToast(e.message || 'Có lỗi xảy ra', 'error'); 
+  }
+});
+
+/* Style hover for post rows */
+document.querySelectorAll('.post-row-item').forEach(el => {
+  el.addEventListener('mouseenter', ()=>{ el.style.background='var(--bg)'; el.style.borderRadius='8px'; });
+  el.addEventListener('mouseleave', ()=>{ el.style.background=''; el.style.borderRadius=''; });
+});
+</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+</body>
+</html>

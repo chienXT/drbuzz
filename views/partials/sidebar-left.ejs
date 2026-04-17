@@ -1,0 +1,98 @@
+<!-- Left Sidebar -->
+<aside class="home-sidebar-left">
+  <% const _activePage = (typeof activePage !== 'undefined' && activePage) ? activePage : ''; %>
+  <% const _currentSort = (typeof currentSort !== 'undefined' && currentSort) ? currentSort : ''; %>
+
+  <!-- Quick Nav -->
+  <% if (typeof user !== 'undefined' && user) { %>
+  <div class="sidebar-panel">
+
+    <div class="sidebar-title"><i class="fas fa-compass"></i> Điều hướng</div>
+
+    <div class="quick-nav-list">
+
+      <a href="/social" class="quick-nav-item <%= _activePage === 'home' ? 'active' : '' %>"><i class="fas fa-home"></i> Trang chủ</a>
+
+      <a href="/social?sort=popular" class="quick-nav-item <%= _currentSort === 'popular' ? 'active' : '' %>"><i class="fas fa-fire"></i> Nổi bật</a>
+
+      <a href="/video" class="quick-nav-item <%= _activePage === 'video' ? 'active' : '' %>"><i class="fas fa-play-circle"></i> Video</a>
+
+      <a href="/friends" class="quick-nav-item <%= _activePage === 'friends' ? 'active' : '' %>"><i class="fas fa-users"></i> Bạn bè</a>
+
+      <a href="/blog" class="quick-nav-item <%= _activePage === 'blog' ? 'active' : '' %>"><i class="fas fa-book-open"></i> Blog</a>
+
+      <% if (user.isAdmin) { %>
+        <a href="/dang-bai" class="quick-nav-item <%= _activePage === 'create-post' ? 'active' : '' %>"><i class="fas fa-pen-fancy"></i> Đăng bài</a>
+
+        <a href="/quan-ly-danh-muc" class="quick-nav-item <%= _activePage === 'admin-categories' ? 'active' : '' %>"><i class="fas fa-layer-group"></i> Quản lý danh mục</a>
+
+        <a href="/quan-ly-nguoi-dung" class="quick-nav-item <%= _activePage === 'admin-users' ? 'active' : '' %>"><i class="fas fa-users-cog"></i> Quản lý người dùng</a>
+      <% } %>
+
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Friend Suggestions -->
+  <% if (typeof friendSuggestions !== 'undefined' && friendSuggestions && friendSuggestions.length > 0) { %>
+    <div class="sidebar-panel suggestion-panel">
+      <div class="sidebar-title"><i class="fas fa-user-plus"></i> Bạn bè có thể biết</div>
+      <div class="suggestion-list">
+        <% friendSuggestions.forEach(function(user) { %>
+          <div class="suggestion-item">
+            <div class="suggestion-avatar">
+              <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="<%= user.displayName %>" loading="lazy" width="40" height="40">
+            </div>
+            <div class="suggestion-info">
+              <a href="/u/<%= user.username %>" class="suggestion-name"><%= user.displayName %></a>
+              <button class="btn btn-sm btn-primary" onclick="addFriend('<%= user._id %>')">
+                <i class="fas fa-plus"></i> Kết bạn
+              </button>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- Site Stats -->
+  <div class="sidebar-panel">
+    <div class="sidebar-title"><i class="fas fa-chart-bar"></i> Xu hướng tuần</div>
+    <div id="siteStats" class="site-stats-list">
+      <% if (typeof trendingHashtags !== 'undefined' && trendingHashtags && trendingHashtags.length > 0) { %>
+        <% trendingHashtags.slice(0, 5).forEach(function(item) { %>
+          <a href="/social?tag=<%= encodeURIComponent(item.tag) %>" class="site-stat-row <%= (typeof currentTag !== 'undefined' && currentTag === item.tag) ? 'is-active' : '' %>">
+            <i class="fas fa-hashtag"></i>
+            <span>#<%= item.tag %></span>
+            <span style="margin-left:auto;color:var(--ink-4);font-size:.76rem;"><%= item.count %> bài</span>
+          </a>
+        <% }); %>
+      <% } else { %>
+        <div class="sidebar-empty-note">Tuần này chưa có hashtag nổi bật.</div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="sidebar-panel stats-panel">
+    <div class="sidebar-title"><i class="fas fa-chart-bar"></i> Thống kê</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number"><%= typeof total !== 'undefined' ? total : '0' %></div>
+        <div class="stat-label">Bài viết</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number"><%= typeof categories !== 'undefined' && categories ? categories.length : '0' %></div>
+        <div class="stat-label">Danh mục</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number"><span id="onlineCount">0</span></div>
+        <div class="stat-label">Người online</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number"><span id="visitorCount">0</span></div>
+        <div class="stat-label">Khách truy cập</div>
+      </div>
+    </div>
+  </div>
+</aside>

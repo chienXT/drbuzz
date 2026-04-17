@@ -1,0 +1,157 @@
+﻿<%
+  const pageTitle  = 'Trang cá nhân · DramaBuzz';
+  const activePage = 'profile';
+%>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/profile.css?v=2026.04.16.01">
+
+<main class="container">
+  <div class="page-layout">
+    <%- include('partials/sidebar-left') %>
+
+    <div class="main-content">
+      <div class="feed-panel">
+        <!-- Profile card -->
+        <div class="profile-card">
+          <div class="profile-cover"></div>
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar" id="profileAvatarPreview">
+              <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="<%= user.displayName %>">
+            </div>
+          </div>
+          <div class="profile-info">
+            <div class="section-row">
+              <div>
+                <h1 class="profile-name" id="profileDisplayName"><%= user.displayName %></h1>
+                <div class="profile-username">@<%= user.username %>
+                  <% if (user.isAdmin) { %><span class="badge badge-cat admin-badge">👑 Admin</span><% } %>
+                </div>
+                <% if (user.bio) { %><p class="profile-bio" id="profileBio"><%= user.bio %></p><% } else { %>
+                  <p class="profile-bio profile-contact" id="profileBio">Chưa có bio. Hãy thêm ngay!</p><% } %>
+                <% if (user.email) { %>
+                  <div class="profile-contact"><i class="fas fa-envelope"></i> <%= user.email %></div>
+                <% } %>
+              </div>
+              <button class="btn btn-secondary" id="editProfileBtn" aria-label="Chỉnh sửa thông tin">
+                <i class="fas fa-pen"></i> Chỉnh sửa
+              </button>
+            </div>
+
+            <div class="profile-stats">
+              <div class="stat-item">
+                <div class="stat-num" id="statPosts"><%= user.postCount || 0 %></div>
+                <div class="stat-label">Bài viết</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num" id="statComments"><%= user.commentCount || 0 %></div>
+                <div class="stat-label">Bình luận</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num" id="statBookmarks">—</div>
+                <div class="stat-label">Đã lưu</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit form (hidden by default) -->
+        <div class="sidebar-card" id="editFormCard" class="hidden">
+          <div class="sidebar-title"><i class="fas fa-pen"></i> Chỉnh sửa thông tin</div>
+          <form class="profile-form" id="profileForm" enctype="multipart/form-data">
+            <div class="avatar-upload-wrap">
+              <div class="avatar-preview" id="avatarPreviewWrap">
+                <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="" id="avatarPreviewImg">
+              </div>
+              <div>
+                <label class="btn btn-secondary btn-sm clickable">
+                  <i class="fas fa-camera"></i> Đổi ảnh
+                  <input type="file" name="avatar" id="avatarInput" accept="image/*" class="hidden">
+                </label>
+                <div class="file-help-text">JPG/PNG/WebP, tối đa 5MB</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tên hiển thị</label>
+              <input class="form-input" type="text" name="displayName" value="<%= user.displayName %>" maxlength="80">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input class="form-input" type="email" name="email" value="<%= user.email || '' %>">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bio</label>
+              <textarea class="form-input" name="bio" rows="3" maxlength="500" placeholder="Giới thiệu về bản thân..."><%= user.bio || '' %></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+                <i class="fas fa-save"></i> Lưu thay đổi
+              </button>
+              <button type="button" class="btn btn-secondary" id="cancelEditBtn">Hủy</button>
+            </div>
+            <p id="profileMsg" class="form-helper-text"></p>
+          </form>
+        </div>
+
+        <!-- Tabs: Bài viết / Đã lưu / Đổi mật khẩu -->
+        <div class="sidebar-card">
+          <div class="tab-bar tabs-spacing" id="profileTabs">
+            <button class="tab-btn active" data-tab="posts">📰 Bài viết của tôi</button>
+            <button class="tab-btn" data-tab="bookmarks">🔖 Đã lưu</button>
+            <button class="tab-btn" data-tab="password">🔒 Đổi mật khẩu</button>
+          </div>
+
+          <div id="tab-posts" class="tab-content active">
+            <div id="myPostsList">
+              <div class="loading-panel"><div class="spinner"></div> Đang tải...</div>
+            </div>
+          </div>
+
+          <div id="tab-bookmarks" class="tab-content">
+            <div id="bookmarksList">
+              <div class="loading-state">
+                <div class="spinner spinner-margin"></div> Đang tải...
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-password" class="tab-content">
+            <form id="changePasswordForm" style="max-width:400px;padding:16px 0">
+              <div class="form-group">
+                <label class="form-label">Mật khẩu hiện tại</label>
+                <input class="form-input" type="password" name="currentPassword" required minlength="6" autocomplete="current-password">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mật khẩu mới</label>
+                <input class="form-input" type="password" name="newPassword" required minlength="6" autocomplete="new-password">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nhập lại mật khẩu mới</label>
+                <input class="form-input" type="password" name="confirmPassword" required minlength="6" autocomplete="new-password">
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> Đổi mật khẩu</button>
+              </div>
+              <p id="passwordMsg" class="form-helper-text"></p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('partials/sidebar-right', { hideCategories: true, sidebarClass: 'home-sidebar-right', hideProfile: true }) %>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><strong>🔥 DramaBuzz</strong> – Blog giải trí & drama 24/7</p>
+  </div>
+</footer>
+
+<script>window.CURRENT_USER = <%- JSON.stringify({ id: user._id || user.id, username: user.username, displayName: user.displayName, avatar: user.avatar || '', isAdmin: user.isAdmin }).replace(/</g, '\\u003c') %>;</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js"></script>
+<script src="/js/profile.js"></script>
+</body>
+</html>

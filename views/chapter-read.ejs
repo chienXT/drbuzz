@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= pageTitle %> | DramaBuzz Novel</title>
+  <meta name="description" content="<%= metaDesc %>">
+  <% if (canonical) { %><link rel="canonical" href="<%= canonical %>"><% } %>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="novel-page">
+  <main class="reader-shell">
+    <header class="reader-head">
+      <div>
+        <div class="reader-title"><a href="/story/<%= story.slug %>"><%= story.title %></a></div>
+        <div class="reader-muted" id="readerChapterMeta"><%= story.author %></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a class="novel-btn novel-btn--ghost" href="/story/<%= story.slug %>">Muc luc</a>
+        <button class="novel-btn novel-btn--ghost" id="readerThemeToggle" type="button">Che do toi</button>
+      </div>
+    </header>
+
+    <article class="reader-paper" id="readerArticle">
+      <h1><%= story.title %></h1>
+      <h2 id="readerChapterTitle">Chuong <%= chapter.chapterNumber %>: <%= chapter.title %></h2>
+      <div class="reader-content" id="readerChapterContent"><%- chapter.content %></div>
+
+      <div class="reader-nav">
+        <a class="novel-btn novel-btn--ghost" id="readerPrev" href="<%= prevChapter ? '/story/' + story.slug + '/' + prevChapter.chapterNumber : '#' %>">
+          <%= prevChapter ? '← Chuong truoc' : 'Khong co chuong truoc' %>
+        </a>
+        <a class="novel-btn novel-btn--ghost" id="readerNext" href="<%= nextChapter ? '/story/' + story.slug + '/' + nextChapter.chapterNumber : '#' %>">
+          <%= nextChapter ? 'Chuong sau →' : 'Da la chuong moi nhat' %>
+        </a>
+      </div>
+    </article>
+
+    <section class="novel-panel" style="margin-top:14px">
+      <div class="novel-panel__body" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <label for="readerQuickList">Nhanh den chuong:</label>
+        <select id="readerQuickList" class="novel-select" style="min-width:220px">
+          <option value="<%= chapter.chapterNumber %>">Chuong <%= chapter.chapterNumber %>: <%= chapter.title %></option>
+          <% if (prevChapter) { %>
+            <option value="<%= prevChapter.chapterNumber %>">Chuong <%= prevChapter.chapterNumber %>: <%= prevChapter.title %></option>
+          <% } %>
+          <% if (nextChapter) { %>
+            <option value="<%= nextChapter.chapterNumber %>">Chuong <%= nextChapter.chapterNumber %>: <%= nextChapter.title %></option>
+          <% } %>
+        </select>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/novel-common.js"></script>
+  <script>
+    window.__CHAPTER_STATE__ = {
+      success: true,
+      story: {
+        slug: '<%= story.slug %>',
+        title: '<%- story.title.replace(/'/g, "\\'") %>',
+        author: '<%- story.author.replace(/'/g, "\\'") %>',
+        coverImage: '<%= story.coverImage || '/images/default-cover.svg' %>'
+      },
+      chapter: {
+        chapterNumber: <%= chapter.chapterNumber %>,
+        title: '<%- chapter.title.replace(/'/g, "\\'") %>',
+        content: <%- JSON.stringify(chapter.content) %>
+      },
+      prevChapter: <%- JSON.stringify(prevChapter || null) %>,
+      nextChapter: <%- JSON.stringify(nextChapter || null) %>
+    };
+  </script>
+  <script src="/js/novel-reader.js"></script>
+</body>
+</html>

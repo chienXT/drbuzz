@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= pageTitle || 'Trang chu truyen' %> | DramaBuzz Novel</title>
+  <meta name="description" content="<%= metaDesc || 'Nen tang doc truyen online, cap nhat chuong moi lien tuc.' %>">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body class="novel-page">
+  <div class="novel-shell">
+    <header class="novel-topbar">
+      <a class="novel-brand" href="/novel">
+        <span class="novel-brand__dot">N</span>
+        <span>DramaBuzz Novel</span>
+      </a>
+      <nav class="novel-nav" aria-label="Novel navigation">
+        <a href="/novel" class="active">Trang chu</a>
+        <a href="/stories">Thu vien truyen</a>
+        <a href="/social">Social cu</a>
+      </nav>
+    </header>
+
+    <section class="novel-hero">
+      <article class="novel-panel">
+        <div class="novel-panel__head">
+          <h2 class="novel-panel__title">Truyen moi cap nhat</h2>
+          <a href="/stories?sort=new">Xem tat ca</a>
+        </div>
+        <div class="novel-panel__body">
+          <% if (newStories && newStories.length) { %>
+            <div class="story-grid">
+              <% newStories.slice(0, 6).forEach(function(story){ %>
+                <a class="story-card" href="/story/<%= story.slug %>">
+                  <img class="story-card__cover" loading="lazy" src="<%= story.coverImage || '/images/default-cover.svg' %>" alt="<%= story.title %>">
+                  <div class="story-card__body">
+                    <div class="story-card__title"><%= story.title %></div>
+                    <div class="story-card__meta">Tac gia: <%= story.author %></div>
+                    <div class="story-card__meta">Trang thai: <%= story.status === 'completed' ? 'Hoan thanh' : 'Dang ra' %></div>
+                  </div>
+                </a>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="novel-empty">Chua co truyen. Ban co the seed du lieu mau de bat dau.</div>
+          <% } %>
+        </div>
+      </article>
+
+      <aside class="novel-panel">
+        <div class="novel-panel__head">
+          <h2 class="novel-panel__title">Tiep tuc doc</h2>
+        </div>
+        <div class="novel-panel__body" id="continueReadingBox">
+          <div class="novel-empty">Lich su doc cua ban se xuat hien o day.</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="novel-panel">
+      <div class="novel-panel__head">
+        <h2 class="novel-panel__title">Truyen hot</h2>
+        <a href="/stories?sort=hot">Xem them</a>
+      </div>
+      <div class="novel-panel__body">
+        <% if (hotStories && hotStories.length) { %>
+          <div class="story-grid">
+            <% hotStories.slice(0, 12).forEach(function(story){ %>
+              <a class="story-card" href="/story/<%= story.slug %>">
+                <img class="story-card__cover" loading="lazy" src="<%= story.coverImage || '/images/default-cover.svg' %>" alt="<%= story.title %>">
+                <div class="story-card__body">
+                  <div class="story-card__title"><%= story.title %></div>
+                  <div class="story-card__meta">Luot doc: <%= Number(story.views || 0).toLocaleString('vi-VN') %></div>
+                  <div class="story-card__tags">
+                    <% (story.genres || []).slice(0, 3).forEach(function(genre){ %>
+                      <span class="story-card__tag"><%= genre %></span>
+                    <% }); %>
+                  </div>
+                </div>
+              </a>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="novel-empty">Khong co du lieu truyen hot.</div>
+        <% } %>
+      </div>
+    </section>
+  </div>
+
+  <script src="/js/novel-common.js"></script>
+  <script>
+    (function () {
+      var box = document.getElementById('continueReadingBox');
+      if (!box || !window.NovelStore) return;
+      var list = window.NovelStore.getReadHistory(6);
+      if (!list.length) return;
+
+      box.innerHTML = list.map(function (item) {
+        return '<div style="padding:8px 0;border-bottom:1px solid var(--border)">' +
+          '<a href="' + item.url + '" style="font-weight:700">' + item.title + '</a>' +
+          '<div class="reader-muted">Chuong ' + item.chapterNumber + ': ' + (item.chapterTitle || '') + '</div>' +
+        '</div>';
+      }).join('');
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<%
+  /* ── Classic Blog Listing ── */
+  const pageTitle = 'Blog Classic';
+  const metaDesc  = 'DramaBuzz Classic Blog – Tin tức, bài viết chuyên sâu';
+  const bodyClass = 'theme-classic-blog';
+  const _title = 'Blog';
+  const _cats  = typeof categories !== 'undefined' ? categories : [];
+  const _posts = typeof posts      !== 'undefined' ? posts      : [];
+  const _recent = typeof recentPosts !== 'undefined' ? recentPosts : [];
+  const _page  = typeof page       !== 'undefined' ? page        : 1;
+  const _pages = typeof pages      !== 'undefined' ? pages       : 1;
+  const _q     = typeof searchQuery!== 'undefined' ? searchQuery : '';
+  const _cat   = typeof currentCategory !== 'undefined' ? currentCategory : '';
+  const _catName = typeof currentCategoryName !== 'undefined' ? currentCategoryName : '';
+  const _tag   = typeof currentTag !== 'undefined' ? currentTag : '';
+  const _showTopGrid = _page == 1 && !_q && !_cat && !_tag && _posts.length > 0;
+  const _topGridPosts = _showTopGrid ? _posts.slice(0, 4) : [];
+  const _listPosts = _showTopGrid ? _posts.slice(4) : _posts;
+%>
+<%- include('partials/header') %>
+<div class="classic-page">
+
+  <div class="classic-container">
+    <!-- Breadcrumb -->
+    <nav class="classic-breadcrumb">
+      <a href="/">Trang chủ</a>
+      <span class="classic-breadcrumb__sep">/</span>
+      <% if (_cat) { %>
+        <a href="/blog">Blog</a>
+        <span class="classic-breadcrumb__sep">/</span>
+        <span><%= _catName || 'Danh mục' %></span>
+      <% } else if (_tag) { %>
+        <a href="/blog">Blog</a>
+        <span class="classic-breadcrumb__sep">/</span>
+        <span>Tag: <%= _tag %></span>
+      <% } else if (_q) { %>
+        <a href="/blog">Blog</a>
+        <span class="classic-breadcrumb__sep">/</span>
+        <span>Tìm: "<%= _q %>"</span>
+      <% } else { %>
+        <span>Blog</span>
+      <% } %>
+    </nav>
+
+    <h1 class="classic-page-title">
+      <% if (_q) { %>Kết quả tìm kiếm: "<%= _q %>"
+      <% } else if (_cat) { %><%= _catName || 'Danh mục' %>
+      <% } else if (_tag) { %>Tag: #<%= _tag %>
+      <% } else { %>Bài viết mới nhất<% } %>
+    </h1>
+    <% if (!_q && !_cat && !_tag) { %>
+      <p class="classic-page-subtitle">Khám phá những bài viết hay nhất từ DramaBuzz</p>
+    <% } %>
+
+    <div class="classic-layout">
+      <!-- Main content -->
+      <main>
+        <% if (!_posts.length) { %>
+          <div class="classic-empty">
+            <i class="fas fa-newspaper"></i>
+            <h3>Chưa có bài viết nào</h3>
+            <p>Hãy quay lại sau nhé!</p>
+          </div>
+        <% } else { %>
+          <% if (_topGridPosts.length) { %>
+            <section class="classic-top-grid" aria-label="Bài viết nổi bật đầu trang">
+              <% _topGridPosts.forEach(function(post) { %>
+                <article class="classic-post-card classic-post-card--grid">
+                  <div class="classic-post-card__img-wrap">
+                    <img src="<%= post.thumbnail || post.images?.[0] || '/images/default-avatar.svg' %>"
+                         alt="<%= post.title %>" class="classic-post-card__img" loading="lazy">
+                  </div>
+                  <div class="classic-post-card__body">
+                    <% if (post.categories && post.categories.length) { %>
+                      <div class="classic-post-card__cats">
+                        <% post.categories.slice(0, 2).forEach(function(cat) { %>
+                          <a href="/blog?category=<%= cat._id || cat %>" class="classic-post-card__cat"><%= cat.name || 'Chung' %></a>
+                        <% }); %>
+                      </div>
+                    <% } %>
+                    <h2 class="classic-post-card__title">
+                      <a href="/blog/<%= post.slug || post._id %>"><%= post.title %></a>
+                    </h2>
+                    <p class="classic-post-card__excerpt"><%= post.excerpt %></p>
+                    <div class="classic-post-card__meta">
+                      <span><i class="far fa-calendar-alt"></i> <%= new Date(post.createdAt).toLocaleDateString('vi-VN') %></span>
+                      <span><i class="far fa-eye"></i> <%= post.views || 0 %></span>
+                      <span><i class="far fa-comment"></i> <%= post.commentCount || 0 %></span>
+                    </div>
+                  </div>
+                </article>
+              <% }); %>
+            </section>
+          <% } %>
+
+          <% _listPosts.forEach(function(post, idx) { %>
+            <div class="<%= idx === 0 && !_showTopGrid && _page == 1 && !_q ? 'classic-post-featured' : '' %>">
+              <article class="classic-post-card">
+                <div class="classic-post-card__img-wrap">
+                  <img src="<%= post.thumbnail || post.images?.[0] || '/images/default-avatar.svg' %>"
+                       alt="<%= post.title %>" class="classic-post-card__img" loading="lazy">
+                </div>
+                <div class="classic-post-card__body">
+                  <% if (post.categories && post.categories.length) { %>
+                    <div class="classic-post-card__cats">
+                      <% post.categories.forEach(function(cat) { %>
+                        <a href="/blog?category=<%= cat._id || cat %>" class="classic-post-card__cat"><%= cat.name || 'Chung' %></a>
+                      <% }); %>
+                    </div>
+                  <% } %>
+                  <h2 class="classic-post-card__title">
+                    <a href="/blog/<%= post.slug || post._id %>"><%= post.title %></a>
+                  </h2>
+                  <p class="classic-post-card__excerpt"><%= post.excerpt %></p>
+                  <div class="classic-post-card__meta">
+                    <span class="classic-post-card__author">
+                      <img src="<%= post.author?.avatar || '/images/default-avatar.svg' %>"
+                           alt="" class="classic-post-card__author-avatar">
+                      <%= post.author?.displayName || post.author?.username || 'Ẩn danh' %>
+                    </span>
+                    <span><i class="far fa-calendar-alt"></i> <%= new Date(post.createdAt).toLocaleDateString('vi-VN') %></span>
+                    <span><i class="far fa-eye"></i> <%= post.views || 0 %></span>
+                    <span><i class="far fa-comment"></i> <%= post.commentCount || 0 %></span>
+                  </div>
+                  <a href="/blog/<%= post.slug || post._id %>" class="classic-post-card__read-more">
+                    Đọc thêm <i class="fas fa-arrow-right"></i>
+                  </a>
+                </div>
+              </article>
+            </div>
+          <% }); %>
+
+          <!-- Pagination -->
+          <% if (_pages > 1) { %>
+            <nav class="classic-pagination">
+              <% if (_page > 1) { %>
+                <a href="/blog?page=<%= _page - 1 %><%= _cat ? '&category='+_cat : '' %><%= _tag ? '&tag='+_tag : '' %><%= _q ? '&search='+encodeURIComponent(_q) : '' %>">
+                  <i class="fas fa-chevron-left"></i>
+                </a>
+              <% } %>
+              <% for (let i = 1; i <= _pages; i++) { %>
+                <% if (i === _page) { %>
+                  <span class="active"><%= i %></span>
+                <% } else if (Math.abs(i - _page) <= 2 || i === 1 || i === _pages) { %>
+                  <a href="/blog?page=<%= i %><%= _cat ? '&category='+_cat : '' %><%= _tag ? '&tag='+_tag : '' %><%= _q ? '&search='+encodeURIComponent(_q) : '' %>"><%= i %></a>
+                <% } else if (Math.abs(i - _page) === 3) { %>
+                  <span class="disabled">…</span>
+                <% } %>
+              <% } %>
+              <% if (_page < _pages) { %>
+                <a href="/blog?page=<%= _page + 1 %><%= _cat ? '&category='+_cat : '' %><%= _tag ? '&tag='+_tag : '' %><%= _q ? '&search='+encodeURIComponent(_q) : '' %>">
+                  <i class="fas fa-chevron-right"></i>
+                </a>
+              <% } %>
+            </nav>
+          <% } %>
+        <% } %>
+      </main>
+
+      <!-- Sidebar -->
+      <aside class="classic-sidebar">
+        <!-- Search -->
+        <div class="classic-sidebar__block">
+          <div class="classic-sidebar__title">Tìm kiếm</div>
+          <form action="/blog" method="get" class="classic-sidebar__search">
+            <input type="text" name="search" placeholder="Nhập từ khóa..." value="<%= _q %>">
+            <button type="submit"><i class="fas fa-search"></i></button>
+          </form>
+        </div>
+
+        <!-- Categories -->
+        <div class="classic-sidebar__block">
+          <div class="classic-sidebar__title">Danh mục</div>
+          <ul class="classic-sidebar__cat-list">
+            <% _cats.forEach(function(cat) { %>
+              <li class="classic-sidebar__cat-item">
+                <a href="/blog?category=<%= cat._id %>" class="classic-sidebar__cat-link">
+                  <% if (cat.icon) { %><i class="<%= cat.icon %>"></i> <% } %><%= cat.name %>
+                </a>
+                <span class="classic-sidebar__cat-count"><%= cat.postCount || 0 %></span>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
+
+        <!-- Recent Posts -->
+        <% if (_recent.length) { %>
+          <div class="classic-sidebar__block">
+            <div class="classic-sidebar__title">Bài viết gần đây</div>
+            <ul class="classic-sidebar__recent">
+              <% _recent.slice(0, 5).forEach(function(rp) { %>
+                <li class="classic-sidebar__recent-item">
+                  <a href="/blog/<%= rp.slug || rp._id %>" class="classic-sidebar__recent-link"><%= rp.title %></a>
+                  <div class="classic-sidebar__recent-date"><%= new Date(rp.createdAt).toLocaleDateString('vi-VN') %></div>
+                </li>
+              <% }); %>
+            </ul>
+          </div>
+        <% } %>
+
+        <!-- Back to main site -->
+        <div class="classic-sidebar__block" style="text-align:center">
+          <a href="/" class="classic-btn classic-btn--ghost"><i class="fas fa-arrow-left"></i> Về trang chính</a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="classic-footer">
+    <div class="classic-footer__inner">
+      <div class="classic-footer__copy">&copy; <%= new Date().getFullYear() %> DramaBuzz. All rights reserved.</div>
+      <div class="classic-footer__social">
+        <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
+        <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="/js/common.js?v=2026.04.16.23"></script>
+<script src="/js/classic.js?v=2025.06.01"></script>
+</body>
+</html>

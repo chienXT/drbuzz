@@ -1,0 +1,122 @@
+﻿<%
+  const pageTitle  = 'Tin nhắn · DramaBuzz';
+  const activePage = 'messages';
+  const bodyClass  = popupMode ? 'messages-popup-embed' : '';
+%>
+<% if (popupMode) { %>
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= pageTitle %></title>
+  <link rel="stylesheet" href="/css/style.css?v=2026.04.16.26">
+  <link rel="stylesheet" href="/css/messages.css?v=2026.04.16.01">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="messages-popup-embed">
+<div class="toast-container" id="toastContainer"></div>
+<% } else { %>
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/messages.css?v=2026.04.16.01">
+<% } %>
+
+<div class="pm-layout">
+
+  <!-- Sidebar: user profile + conversations -->
+  <aside class="pm-sidebar">
+
+    <!-- Search Bar -->
+    <div class="pm-sidebar-header">
+      <input type="text" id="pmSearch" class="form-input pm-search-input" placeholder="Tìm kiếm tin nhắn..." autocomplete="off">
+    </div>
+
+    <!-- Conversations (loaded by JS) -->
+    <div id="convList" class="pm-conv-list">
+      <div class="loading-container"><div class="spinner"></div><span class="loading-text">Đang tải...</span></div>
+    </div>
+
+    <!-- Friend list (shown when searching) -->
+    <div id="friendList" class="pm-conv-list hidden">
+      <% if(friends && friends.length){ %>
+        <% friends.forEach(function(f){ %>
+          <div class="pm-user-item" data-uid="<%= f._id %>" data-name="<%= f.displayName %>" data-avatar="<%= f.avatar||'' %>">
+            <div class="pm-avatar">
+              <img src="<%= f.avatar || '/images/default-avatar.svg' %>" alt="<%= f.displayName %> avatar" loading="lazy" decoding="async">
+              <span class="pm-status-dot" id="status-<%= f._id %>"></span>
+            </div>
+            <div class="pm-conv-details">
+              <div class="pm-conv-name"><%= f.displayName %></div>
+              <div class="pm-conv-preview">@<%= f.username %></div>
+            </div>
+          </div>
+        <% }); %>
+      <% }else{ %>
+        <div style="text-align: center; padding: 24px 16px; color: var(--ink-4); font-size: .9rem;">
+          Chưa có bạn bè nào.<br><br>
+          <a href="/friends" style="color: var(--primary);">Kết bạn để bắt đầu</a>
+        </div>
+      <% } %>
+    </div>
+  </aside>
+
+  <!-- Main chat area -->
+  <div class="pm-main" id="pmMain">
+
+    <!-- Empty state -->
+    <div class="pm-empty-state" id="pmEmpty">
+      <div class="pm-empty-icon">💬</div>
+      <h3 style="margin: 0; font-size: 1.1rem; color: var(--ink);">Chọn một cuộc trò chuyện</h3>
+      <p style="margin: 0; font-size: .9rem; color: var(--ink-4);">Chọn bạn bè từ danh sách bên trái để bắt đầu nhắn tin</p>
+    </div>
+
+    <!-- Chat window -->
+    <div class="pm-chat-window hidden" id="pmChatWindow">
+
+      <div class="pm-chat-header">
+        <button class="pm-back-btn" id="pmBackBtn"><i class="fas fa-arrow-left"></i></button>
+        <div style="flex: 1; min-width: 0;">
+          <div class="pm-header-name" id="pmHeaderName"></div>
+          <div style="font-size: .75rem; color: var(--ink-4);">
+            <span id="pmStatusText">Offline</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-messages" id="pmMessages"></div>
+
+      <div id="pmTypingEl" class="pm-typing-text"></div>
+
+      <div class="pm-input-area">
+        <div class="pm-input-top">
+          <div class="pm-input-toolbar">
+            <button class="pm-toolbar-btn" title="Emoji"><i class="fas fa-smile"></i></button>
+            <button class="pm-toolbar-btn" title="Hình ảnh"><i class="fas fa-image"></i></button>
+            <button class="pm-toolbar-btn" title="Tập tin"><i class="fas fa-paperclip"></i></button>
+            <button class="pm-toolbar-btn" title="Thông báo"><i class="fas fa-bell"></i></button>
+          </div>
+        </div>
+        <div class="pm-input-bottom">
+          <textarea id="pmInput" class="chat-input" placeholder="" rows="2" maxlength="1000" disabled></textarea>
+          <button id="pmSendBtn" class="chat-send-btn" disabled><i class="fas fa-paper-plane"></i></button>
+        </div>
+        <div class="pm-input-footer">
+          <span class="pm-input-hint">Nhấn Enter để gửi / Ctrl+Enter để xuống dòng</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="currentUserJson" type="application/json"><%- JSON.stringify({ id: user._id||user.id, username: user.username, displayName: user.displayName, avatar: user.avatar||'', isAdmin: user.isAdmin }).replace(/</g, '\\u003c') %></script>
+<script id="friendsListJson" type="application/json"><%- JSON.stringify((friends||[]).map(f=>({ id: f._id, username: f.username, displayName: f.displayName, avatar: f.avatar||'' }))).replace(/</g, '\\u003c') %></script>
+<script>
+  window.CURRENT_USER = JSON.parse(document.getElementById('currentUserJson').textContent || '{}');
+  window.FRIENDS_LIST = JSON.parse(document.getElementById('friendsListJson').textContent || '[]');
+</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script defer src="/js/common.js?v=2026.04.16.23"></script>
+<script defer src="/js/messages.js?v=2026.04.16.19"></script>
+</body>
+</html>
