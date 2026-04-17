@@ -12,7 +12,9 @@
   position: relative;
 }
 .profile-avatar-wrap {
-  position: absolute; bottom: -40px; left: 28px;
+  position: absolute;
+  top: 120px;
+  left: 28px;
   z-index: 10;
 }
 .profile-avatar {
@@ -21,6 +23,14 @@
   background: var(--primary);
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 2rem; font-weight: 700;
+}
+.profile-avatar img,
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 .profile-info { padding: 52px 28px 24px; }
 .profile-name { font-family: var(--font-serif); font-size: 1.5rem; font-weight: 900; }
@@ -35,5 +45,20 @@
   width: 60px; height: 60px; border-radius: 50%; background: var(--primary);
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 1.4rem; font-weight: 700; overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .profile-cover { height: 136px; }
+  .profile-avatar-wrap {
+    top: 98px;
+    left: 16px;
+  }
+  .profile-avatar {
+    width: 72px;
+    height: 72px;
+  }
+  .profile-info {
+    padding: 46px 16px 20px;
+  }
 }
 
