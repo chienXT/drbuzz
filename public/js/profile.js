@@ -40,6 +40,48 @@ function initAvatarPreview() {
   });
 }
 
+/* ── Cover preview before upload ───────────── */
+function initCoverPreview() {
+  const input = document.getElementById('coverInput');
+  const preview = document.getElementById('coverPreviewWrap');
+  if (!input || !preview) return;
+
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    preview.style.backgroundImage = `url('${url}')`;
+    preview.classList.add('has-image');
+  });
+}
+
+/* ── Quick edit avatar/cover buttons ──────── */
+function initQuickImageEditButtons() {
+  const editForm = document.getElementById('editFormCard');
+  const editBtn = document.getElementById('editProfileBtn');
+  const avatarInput = document.getElementById('avatarInput');
+  const coverInput = document.getElementById('coverInput');
+  const quickAvatarBtn = document.getElementById('quickEditAvatarBtn');
+  const quickCoverBtn = document.getElementById('quickEditCoverBtn');
+
+  const openEditForm = () => {
+    if (!editForm) return;
+    editForm.style.display = 'block';
+    if (editBtn) editBtn.style.display = 'none';
+    editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  quickAvatarBtn?.addEventListener('click', () => {
+    openEditForm();
+    avatarInput?.click();
+  });
+
+  quickCoverBtn?.addEventListener('click', () => {
+    openEditForm();
+    coverInput?.click();
+  });
+}
+
 /* ── Save profile ───────────────────────────── */
 function initProfileForm() {
   const form = document.getElementById('profileForm');
@@ -82,6 +124,20 @@ function initProfileForm() {
       const profileAvatarEl = document.getElementById('profileAvatarPreview');
       if (profileAvatarEl && u.avatar) {
         profileAvatarEl.innerHTML = `<img src="${u.avatar}" alt="">`;
+      }
+
+      // Update profile cover
+      const coverEl = document.getElementById('profileCoverPreview');
+      const coverPreviewEl = document.getElementById('coverPreviewWrap');
+      if (u.coverImage) {
+        if (coverEl) {
+          coverEl.style.backgroundImage = `url('${u.coverImage}')`;
+          coverEl.classList.add('has-image');
+        }
+        if (coverPreviewEl) {
+          coverPreviewEl.style.backgroundImage = `url('${u.coverImage}')`;
+          coverPreviewEl.classList.add('has-image');
+        }
       }
 
       showToast('✅ Đã cập nhật thông tin', 'success');
@@ -211,6 +267,8 @@ async function loadCommentCount() {
 document.addEventListener('DOMContentLoaded', () => {
   initEditToggle();
   initAvatarPreview();
+  initCoverPreview();
+  initQuickImageEditButtons();
   initProfileForm();
   initProfileTabs();
   loadCommentCount();

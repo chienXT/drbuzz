@@ -3,7 +3,7 @@
   const activePage = 'profile';
 %>
 <%- include('partials/header') %>
-<link rel="stylesheet" href="/css/profile.css?v=2026.04.17.02">
+<link rel="stylesheet" href="/css/profile.css?v=2026.04.17.06">
 
 <main class="container">
   <div class="page-layout">
@@ -13,11 +13,17 @@
       <div class="feed-panel">
         <!-- Profile card -->
         <div class="profile-card">
-          <div class="profile-cover"></div>
+          <div class="profile-cover<%= user.coverImage ? ' has-image' : '' %>" id="profileCoverPreview"<% if (user.coverImage) { %> style="background-image:url('<%= user.coverImage %>')"<% } %>></div>
+          <button type="button" class="quick-edit-btn quick-edit-cover" id="quickEditCoverBtn" aria-label="Đổi ảnh bìa">
+            <i class="fas fa-camera"></i>
+          </button>
           <div class="profile-avatar-wrap">
             <div class="profile-avatar" id="profileAvatarPreview">
               <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="<%= user.displayName %>">
             </div>
+            <button type="button" class="quick-edit-btn quick-edit-avatar" id="quickEditAvatarBtn" aria-label="Đổi avatar">
+              <i class="fas fa-pen"></i>
+            </button>
           </div>
           <div class="profile-info">
             <div class="section-row">
@@ -68,6 +74,17 @@
                   <input type="file" name="avatar" id="avatarInput" accept="image/*" class="hidden">
                 </label>
                 <div class="file-help-text">JPG/PNG/WebP, tối đa 5MB</div>
+              </div>
+            </div>
+
+            <div class="cover-upload-wrap">
+              <div class="cover-preview<%= user.coverImage ? ' has-image' : '' %>" id="coverPreviewWrap"<% if (user.coverImage) { %> style="background-image:url('<%= user.coverImage %>')"<% } %>></div>
+              <div>
+                <label class="btn btn-secondary btn-sm clickable">
+                  <i class="fas fa-image"></i> Đổi ảnh bìa
+                  <input type="file" name="coverImage" id="coverInput" accept="image/*" class="hidden">
+                </label>
+                <div class="file-help-text">JPG/PNG/WebP, tỷ lệ ngang sẽ đẹp hơn</div>
               </div>
             </div>
 
