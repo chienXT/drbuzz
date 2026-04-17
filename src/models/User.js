@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     displayName: { type: String, required: true, trim: true, maxlength: 80 },
     email:       { type: String, trim: true, lowercase: true, maxlength: 200, default: '' },
     avatar:      { type: String, default: '' },
+    coverImage:  { type: String, default: '' },
     bio:         { type: String, maxlength: 500, default: '' },
     isAdmin:     { type: Boolean, default: false },
     isBanned:    { type: Boolean, default: false },

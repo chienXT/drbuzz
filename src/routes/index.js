@@ -94,7 +94,7 @@ router.delete('/api/comments/:id',           requireAuth, commentCtrl.remove);
 
 /* USERS */
 router.get('/api/users/:username',    userCtrl.getProfile);
-router.put('/api/users/me',           requireAuth, upload.single('avatar'), profileRules, validate, userCtrl.updateProfile);
+router.put('/api/users/me',           requireAuth, upload.fields([{ name: 'avatar', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]), profileRules, validate, userCtrl.updateProfile);
 router.get('/api/users/me/bookmarks', requireAuth, userCtrl.getBookmarks);
 
 /* ADMIN USER MANAGEMENT */

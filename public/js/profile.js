@@ -160,57 +160,76 @@ function initImagePickerModal() {
     }
   });
 
-  applyBtn?.addEventListener('click', () => {
+  applyBtn?.addEventListener('click', async () => {
     if (!imagePickerState.target) return;
+
     const url = (urlInput?.value || '').trim();
     const targetInput = pickTargetInput();
     const targetUrlInput = pickTargetUrlInput();
+    const file = targetInput?.files?.[0];
 
-    if (!url && !(targetInput?.files && targetInput.files.length)) {
+    if (!url && !file) {
       if (msgEl) msgEl.textContent = 'Hãy chọn file ảnh hoặc dán link ảnh.';
       return;
     }
 
-    if (url) {
-      try {
+    const fd = new FormData();
+    try {
+      if (url) {
         const parsed = new URL(url);
         if (!['http:', 'https:'].includes(parsed.protocol)) {
           throw new Error('invalid_protocol');
         }
 
-        if (targetUrlInput) targetUrlInput.value = parsed.toString();
-        if (targetInput) targetInput.value = '';
-        imagePickerState.pendingMode = 'url';
-        imagePickerState.pendingSrc = parsed.toString();
-
-        if (imagePickerState.target === 'avatar' && avatarPreview) {
-          avatarPreview.innerHTML = `<img src="${imagePickerState.pendingSrc}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-        }
-        if (imagePickerState.target === 'cover' && coverPreview) {
-          coverPreview.style.backgroundImage = `url('${imagePickerState.pendingSrc}')`;
-          coverPreview.classList.add('has-image');
-        }
-      } catch {
-        if (msgEl) msgEl.textContent = 'Link ảnh không hợp lệ (chỉ nhận http/https).';
-        return;
+        if (imagePickerState.target === 'avatar') fd.append('avatarUrl', parsed.toString());
+        if (imagePickerState.target === 'cover') fd.append('coverImageUrl', parsed.toString());
+      } else if (file) {
+        if (imagePickerState.target === 'avatar') fd.append('avatar', file);
+        if (imagePickerState.target === 'cover') fd.append('coverImage', file);
       }
-    } else {
-      if (targetUrlInput) targetUrlInput.value = '';
-      const file = targetInput?.files?.[0];
-      if (file) {
-        const src = imagePickerState.pendingSrc || URL.createObjectURL(file);
-        if (imagePickerState.target === 'avatar' && avatarPreview) {
-          avatarPreview.innerHTML = `<img src="${src}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-        }
-        if (imagePickerState.target === 'cover' && coverPreview) {
-          coverPreview.style.backgroundImage = `url('${src}')`;
-          coverPreview.classList.add('has-image');
-        }
-      }
+    } catch {
+      if (msgEl) msgEl.textContent = 'Link ảnh không hợp lệ (chỉ nhận http/https).';
+      return;
     }
 
-    closeModal(false);
-    showToast('Đã chọn ảnh. Bấm "Lưu thay đổi" để cập nhật.', 'info');
+    if (typeof setLoading === 'function') setLoading(applyBtn, true);
+    if (msgEl) msgEl.textContent = '';
+
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PUT',
+        body: fd,
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Không thể cập nhật ảnh');
+
+      const u = data.user || {};
+      const headerAvatar = document.querySelector('.header-avatar');
+
+      if (u.avatar && avatarPreview) {
+        avatarPreview.innerHTML = `<img src="${u.avatar}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        if (headerAvatar) {
+          headerAvatar.innerHTML = `<img src="${u.avatar}" alt="${u.displayName || ''}">`;
+        }
+      }
+
+      if (u.coverImage && coverPreview) {
+        coverPreview.style.backgroundImage = `url('${u.coverImage}')`;
+        coverPreview.classList.add('has-image');
+      }
+
+      if (targetUrlInput) targetUrlInput.value = '';
+      if (targetInput) targetInput.value = '';
+
+      closeModal(false);
+      showToast('✅ Đã cập nhật ảnh', 'success');
+    } catch (err) {
+      if (msgEl) msgEl.textContent = err.message || 'Lỗi cập nhật ảnh';
+      showToast(err.message || 'Lỗi cập nhật ảnh', 'error');
+    } finally {
+      if (typeof setLoading === 'function') setLoading(applyBtn, false);
+    }
   });
 
   closeBtn?.addEventListener('click', () => closeModal(true));
