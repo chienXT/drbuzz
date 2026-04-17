@@ -428,7 +428,7 @@ const classicBlog = async (req, res, next) => {
       ];
     }
 
-    const [posts, total, categories, recentPosts] = await Promise.all([
+    const [posts, total, categoriesRaw, categoryStats, recentPosts] = await Promise.all([
       Post.find(filter)
         .sort({ createdAt: -1 })
         .skip((+page - 1) * limit)
@@ -438,10 +438,21 @@ const classicBlog = async (req, res, next) => {
         .populate('commentCount'),
       Post.countDocuments(filter),
       Category.find({ target: 'blog' }).sort({ name: 1 }).lean(),
+      Post.aggregate([
+        { $match: { status: 'published', postType: { $ne: 'video' } } },
+        { $unwind: '$categories' },
+        { $group: { _id: '$categories', postCount: { $sum: 1 } } },
+      ]),
       Post.find({ status: 'published', postType: { $ne: 'video' } })
         .sort({ createdAt: -1 }).limit(5)
         .select('title slug createdAt').lean(),
     ]);
+
+    const categoryCountMap = new Map(categoryStats.map((x) => [String(x._id), x.postCount]));
+    const categories = categoriesRaw.map((cat) => ({
+      ...cat,
+      postCount: categoryCountMap.get(String(cat._id)) || 0,
+    }));
 
     const pages = Math.ceil(total / limit);
 
