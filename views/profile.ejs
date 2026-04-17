@@ -157,6 +157,11 @@
       </button>
       <div class="image-picker-file-note" id="pickerFileNote">Chưa chọn ảnh nào</div>
 
+      <div class="image-picker-preview" id="pickerPreview">
+        <img id="pickerPreviewImg" alt="Xem trước ảnh">
+        <div class="image-picker-preview-empty" id="pickerPreviewEmpty">Xem trước ảnh sẽ hiện ở đây</div>
+      </div>
+
       <div class="image-picker-or">hoặc</div>
 
       <label class="form-label" for="pickerImageUrl">Dán link ảnh</label>
@@ -180,6 +185,6 @@
 <script>window.CURRENT_USER = <%- JSON.stringify({ id: user._id || user.id, username: user.username, displayName: user.displayName, avatar: user.avatar || '', isAdmin: user.isAdmin }).replace(/</g, '\\u003c') %>;</script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script src="/js/common.js"></script>
-<script src="/js/profile.js"></script>
+<script src="/js/profile.js?v=2026.04.17.09"></script>
 </body>
 </html>

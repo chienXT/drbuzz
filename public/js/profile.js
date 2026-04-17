@@ -9,6 +9,8 @@ if (typeof ME === 'undefined') var ME = window.CURRENT_USER || null;
 
 const imagePickerState = {
   target: null, // 'avatar' | 'cover'
+  pendingMode: null, // 'file' | 'url' | null
+  pendingSrc: '',
 };
 
 /* ── Edit profile toggle ────────────────────── */
@@ -31,41 +33,12 @@ function initEditToggle() {
 
 /* ── Avatar preview before upload ──────────── */
 function initAvatarPreview() {
-  const input   = document.getElementById('avatarInput');
-  const preview = document.getElementById('profileAvatarPreview');
-  const urlInput = document.getElementById('avatarUrlInput');
-  if (!input || !preview) return;
-
-  input.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    if (urlInput) urlInput.value = '';
-
-    preview.innerHTML = `<img src="${url}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-    const noteEl = document.getElementById('pickerFileNote');
-    if (noteEl) noteEl.textContent = `Đã chọn: ${file.name}`;
-  });
+  // Preview is handled in modal and applied only on confirmation.
 }
 
 /* ── Cover preview before upload ───────────── */
 function initCoverPreview() {
-  const input = document.getElementById('coverInput');
-  const preview = document.getElementById('profileCoverPreview');
-  const urlInput = document.getElementById('coverImageUrlInput');
-  if (!input || !preview) return;
-
-  input.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    if (urlInput) urlInput.value = '';
-    preview.style.backgroundImage = `url('${url}')`;
-    preview.classList.add('has-image');
-
-    const noteEl = document.getElementById('pickerFileNote');
-    if (noteEl) noteEl.textContent = `Đã chọn: ${file.name}`;
-  });
+  // Preview is handled in modal and applied only on confirmation.
 }
 
 /* ── Image picker modal ───────────────────── */
@@ -80,6 +53,8 @@ function initImagePickerModal() {
   const fileNote = document.getElementById('pickerFileNote');
   const urlInput = document.getElementById('pickerImageUrl');
   const msgEl = document.getElementById('pickerImageMsg');
+  const previewWrap = document.getElementById('pickerPreview');
+  const previewImg = document.getElementById('pickerPreviewImg');
   const avatarInput = document.getElementById('avatarInput');
   const coverInput = document.getElementById('coverInput');
   const avatarUrlInput = document.getElementById('avatarUrlInput');
@@ -89,20 +64,35 @@ function initImagePickerModal() {
 
   if (!modal) return;
 
-  const closeModal = () => {
+  const clearPopupPreview = () => {
+    imagePickerState.pendingMode = null;
+    imagePickerState.pendingSrc = '';
+    if (previewWrap) {
+      previewWrap.classList.remove('show-image');
+    }
+    if (previewImg) previewImg.removeAttribute('src');
+    if (fileNote) fileNote.textContent = 'Chưa chọn ảnh nào';
+  };
+
+  const closeModal = (discard = false) => {
+    const targetInput = imagePickerState.target === 'cover' ? coverInput : avatarInput;
+    if (discard && targetInput) targetInput.value = '';
     modal.classList.add('hidden');
     modal.setAttribute('aria-hidden', 'true');
     imagePickerState.target = null;
     if (urlInput) urlInput.value = '';
-    if (fileNote) fileNote.textContent = 'Chưa chọn ảnh nào';
     if (msgEl) msgEl.textContent = '';
+    clearPopupPreview();
   };
 
   const openModal = (target) => {
     imagePickerState.target = target;
     if (titleEl) titleEl.textContent = target === 'avatar' ? 'Đổi ảnh đại diện' : 'Đổi ảnh bìa';
+    clearPopupPreview();
+    if (previewWrap) {
+      previewWrap.classList.toggle('is-avatar', target === 'avatar');
+    }
     if (urlInput) urlInput.value = '';
-    if (fileNote) fileNote.textContent = 'Chưa chọn ảnh nào';
     if (msgEl) msgEl.textContent = '';
     modal.classList.remove('hidden');
     modal.setAttribute('aria-hidden', 'false');
@@ -113,11 +103,61 @@ function initImagePickerModal() {
   const pickTargetInput = () => imagePickerState.target === 'cover' ? coverInput : avatarInput;
   const pickTargetUrlInput = () => imagePickerState.target === 'cover' ? coverUrlInput : avatarUrlInput;
 
+  const renderPopupPreview = (src) => {
+    if (!previewWrap || !previewImg || !src) return;
+    previewImg.src = src;
+    previewWrap.classList.add('show-image');
+  };
+
   chooseFileBtn?.addEventListener('click', () => {
     const targetInput = pickTargetInput();
     if (!targetInput) return;
     if (msgEl) msgEl.textContent = '';
     targetInput.click();
+  });
+
+  avatarInput?.addEventListener('change', (e) => {
+    if (imagePickerState.target !== 'avatar') return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const src = URL.createObjectURL(file);
+    imagePickerState.pendingMode = 'file';
+    imagePickerState.pendingSrc = src;
+    if (urlInput) urlInput.value = '';
+    if (fileNote) fileNote.textContent = `Đã chọn: ${file.name}`;
+    renderPopupPreview(src);
+  });
+
+  coverInput?.addEventListener('change', (e) => {
+    if (imagePickerState.target !== 'cover') return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const src = URL.createObjectURL(file);
+    imagePickerState.pendingMode = 'file';
+    imagePickerState.pendingSrc = src;
+    if (urlInput) urlInput.value = '';
+    if (fileNote) fileNote.textContent = `Đã chọn: ${file.name}`;
+    renderPopupPreview(src);
+  });
+
+  urlInput?.addEventListener('input', () => {
+    const url = (urlInput.value || '').trim();
+    if (!url) {
+      if (msgEl) msgEl.textContent = '';
+      return;
+    }
+
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('invalid_protocol');
+      imagePickerState.pendingMode = 'url';
+      imagePickerState.pendingSrc = parsed.toString();
+      if (msgEl) msgEl.textContent = '';
+      if (fileNote) fileNote.textContent = 'Đã nhập link ảnh';
+      renderPopupPreview(imagePickerState.pendingSrc);
+    } catch {
+      if (msgEl) msgEl.textContent = 'Link ảnh không hợp lệ (chỉ nhận http/https).';
+    }
   });
 
   applyBtn?.addEventListener('click', () => {
@@ -138,55 +178,56 @@ function initImagePickerModal() {
           throw new Error('invalid_protocol');
         }
 
-        if (targetUrlInput) targetUrlInput.value = url;
+        if (targetUrlInput) targetUrlInput.value = parsed.toString();
         if (targetInput) targetInput.value = '';
+        imagePickerState.pendingMode = 'url';
+        imagePickerState.pendingSrc = parsed.toString();
 
         if (imagePickerState.target === 'avatar' && avatarPreview) {
-          avatarPreview.innerHTML = `<img src="${url}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+          avatarPreview.innerHTML = `<img src="${imagePickerState.pendingSrc}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
         }
         if (imagePickerState.target === 'cover' && coverPreview) {
-          coverPreview.style.backgroundImage = `url('${url}')`;
+          coverPreview.style.backgroundImage = `url('${imagePickerState.pendingSrc}')`;
           coverPreview.classList.add('has-image');
         }
       } catch {
         if (msgEl) msgEl.textContent = 'Link ảnh không hợp lệ (chỉ nhận http/https).';
         return;
       }
-    } else if (targetUrlInput) {
-      targetUrlInput.value = '';
+    } else {
+      if (targetUrlInput) targetUrlInput.value = '';
+      const file = targetInput?.files?.[0];
+      if (file) {
+        const src = imagePickerState.pendingSrc || URL.createObjectURL(file);
+        if (imagePickerState.target === 'avatar' && avatarPreview) {
+          avatarPreview.innerHTML = `<img src="${src}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        }
+        if (imagePickerState.target === 'cover' && coverPreview) {
+          coverPreview.style.backgroundImage = `url('${src}')`;
+          coverPreview.classList.add('has-image');
+        }
+      }
     }
 
-    closeModal();
+    closeModal(false);
+    showToast('Đã chọn ảnh. Bấm "Lưu thay đổi" để cập nhật.', 'info');
   });
 
-  closeBtn?.addEventListener('click', closeModal);
-  cancelBtn?.addEventListener('click', closeModal);
-  backdrop?.addEventListener('click', closeModal);
+  closeBtn?.addEventListener('click', () => closeModal(true));
+  cancelBtn?.addEventListener('click', () => closeModal(true));
+  backdrop?.addEventListener('click', () => closeModal(true));
 }
 
 /* ── Quick edit avatar/cover buttons ──────── */
 function initQuickImageEditButtons() {
-  const editForm = document.getElementById('editFormCard');
-  const editBtn = document.getElementById('editProfileBtn');
-  const avatarInput = document.getElementById('avatarInput');
-  const coverInput = document.getElementById('coverInput');
   const quickAvatarBtn = document.getElementById('quickEditAvatarBtn');
   const quickCoverBtn = document.getElementById('quickEditCoverBtn');
 
-  const openEditForm = () => {
-    if (!editForm) return;
-    editForm.style.display = 'block';
-    if (editBtn) editBtn.style.display = 'none';
-    editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   quickAvatarBtn?.addEventListener('click', () => {
-    openEditForm();
     if (window.openImagePickerModal) window.openImagePickerModal('avatar');
   });
 
   quickCoverBtn?.addEventListener('click', () => {
-    openEditForm();
     if (window.openImagePickerModal) window.openImagePickerModal('cover');
   });
 }
