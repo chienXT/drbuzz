@@ -98,7 +98,7 @@
 
             <!-- Categories -->
             <div class="cp-field">
-              <label class="cp-label">Danh mục</label>
+              <label class="cp-label">Danh mục (Bài viết)</label>
               <div class="cp-checkbox-grid" id="catCheckboxes">
                 <% if (typeof categories !== 'undefined') { %>
                   <% categories.forEach(function(cat) {
@@ -133,6 +133,9 @@
                 <% }); %>
               <% } %>
             <% } %>
+            
+            <!-- Post type -->
+            <input type="hidden" name="postType" value="<%= typeof postType !== 'undefined' ? postType : 'post' %>">
 
             <!-- Submit -->
             <div class="cp-actions">

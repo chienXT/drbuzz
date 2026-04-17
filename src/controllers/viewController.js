@@ -102,7 +102,6 @@ const postDetail = async (req, res, next) => {
     const post     = await postService.getPostById(req.params.id);
     const { comments } = await commentService.getComments(post._id);
     const related = await postService.getRelatedPosts(post, 6);
-    let recentActivity = await postService.getRecentActivities(20) || [];
     
     let authorFriendship = null;
     if (req.user) {
@@ -119,10 +118,9 @@ const postDetail = async (req, res, next) => {
         }).select('status requester').lean();
       }
     }
-    recentActivity = await filterActivityByFriends(req.user?._id, recentActivity);
     
     res.render('post', {
-      user: req.user || null, post, comments, recentActivity, authorFriendship,
+      user: req.user || null, post, comments, authorFriendship,
       related: (related || []).filter(p => String(p._id) !== String(post._id)).slice(0,4),
     });
   } catch (err) { next(err); }
@@ -144,10 +142,7 @@ const messages = async (req, res, next) => {
 /** GET /profile */
 const profile = async (req, res, next) => {
   try {
-    let recentActivity = await postService.getRecentActivities(20) || [];
-    recentActivity = await filterActivityByFriends(req.user?._id, recentActivity);
-    
-    res.render('profile', { user: req.user, recentActivity });
+    res.render('profile', { user: req.user });
   } catch (err) { next(err); }
 };
 
@@ -165,10 +160,8 @@ const publicProfile = async (req, res, next) => {
       friendStatus = await friendService.getStatus(req.user._id, target._id);
     }
     const isSelf = req.user && String(req.user._id) === String(target._id);
-    let recentActivity = await postService.getRecentActivities(20) || [];
-    recentActivity = await filterActivityByFriends(req.user?._id, recentActivity);
     
-    res.render('profile-public', { user: req.user || null, target, userPosts, friendStatus, isSelf, recentActivity });
+    res.render('profile-public', { user: req.user || null, target, userPosts, friendStatus, isSelf });
   } catch (err) { next(err); }
 };
 
@@ -180,10 +173,8 @@ const search = async (req, res, next) => {
     if (q) {
       [posts, users] = await Promise.all([searchService.searchPosts(q), searchService.searchUsers(q)]);
     }
-    let recentActivity = await postService.getRecentActivities(20) || [];
-    recentActivity = await filterActivityByFriends(req.user?._id, recentActivity);
     
-    res.render('search', { user: req.user || null, query: q, posts, users, recentActivity });
+    res.render('search', { user: req.user || null, query: q, posts, users });
   } catch (err) { next(err); }
 };
 
@@ -191,7 +182,6 @@ const search = async (req, res, next) => {
 const createPost = async (req, res, next) => {
   try {
     const categories = await Category.find({ target: 'blog' }).sort({ name: 1 });
-    let recentActivity = await postService.getRecentActivities(20) || [];
 
     // Load bài cũ nếu có ?edit=postId (admin hoặc tác giả)
     let editPost = null;
@@ -204,9 +194,7 @@ const createPost = async (req, res, next) => {
       } catch { /* ID không hợp lệ hoặc post không tồn tại, tiếp tục như form tạo mới */ }
     }
 
-    recentActivity = await filterActivityByFriends(req.user?._id, recentActivity);
-
-    res.render('create-post', { user: req.user, categories, activePage: 'home', recentActivity, editPost });
+    res.render('create-post', { user: req.user, categories, activePage: 'home', editPost, postType: 'blog' });
   } catch (err) { next(err); }
 };
 
@@ -315,13 +303,11 @@ const friends = async (req, res, next) => {
       );
     }
     
-    const recentActivity = await postService.getRecentActivities(20) || [];
     res.render('friends', { 
       user: req.user, 
       friends: friendsList, 
       search,
       friendCount: userFriends?.length || 0,
-      recentActivity
     });
   } catch (err) { next(err); }
 };
@@ -368,7 +354,7 @@ const createVideoPost = async (req, res, next) => {
         }
       } catch { /* bỏ qua */ }
     }
-    res.render('create-video', { user: req.user, categories, activePage: 'video', editPost });
+    res.render('create-video', { user: req.user, categories, activePage: 'video', editPost, postType: 'video' });
   } catch (err) { next(err); }
 };
 

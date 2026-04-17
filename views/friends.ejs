@@ -58,9 +58,6 @@
                   <% } %>
                   
                   <div class="friend-meta">
-                    <% if(friend.followers){ %>
-                      <span><i class="fas fa-heart"></i> <%= (friend.followers || []).length %> người theo dõi</span>
-                    <% } %>
                     <% if(friend.createdAt){ %>
                       <span style="font-size: .75rem; color: var(--ink-4);">Kết bạn <%= new Date(friend.createdAt).toLocaleDateString('vi-VN') %></span>
                     <% } %>

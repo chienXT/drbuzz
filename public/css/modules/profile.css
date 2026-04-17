@@ -3,8 +3,9 @@
    ====================================== */
 .profile-card {
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow);
+  border-radius: var(--radius-lg); overflow: visible; box-shadow: var(--shadow);
   margin-bottom: 24px;
+  position: relative;
 }
 .profile-cover {
   height: 160px; background: linear-gradient(135deg, var(--primary) 0%, #fc8181 100%);
@@ -12,6 +13,7 @@
 }
 .profile-avatar-wrap {
   position: absolute; bottom: -40px; left: 28px;
+  z-index: 10;
 }
 .profile-avatar {
   width: 80px; height: 80px; border-radius: 50%;

@@ -492,9 +492,17 @@ function initStatusComments() {
         commentsList.insertAdjacentHTML('beforeend', renderComment(data.comment));
         if (commentInput) commentInput.value = '';
 
-        const countEl = document.querySelector(`.sf-comment-toggle[data-id="${statusId}"] .sf-comment-count`);
-        const newCount = (parseInt(countEl?.textContent || '0', 10) || 0) + 1;
-        if (countEl) countEl.textContent = newCount;
+        // Update comment count in both modal header and feed item
+        const newCount = (parseInt(commentCountEl?.textContent || '0', 10) || 0) + 1;
+        if (commentCountEl) commentCountEl.textContent = `${newCount} bình luận`;
+        
+        // Update feed item comment count
+        const feedToggleBtn = document.querySelector(`.sf-comment-toggle[data-id="${statusId}"]`);
+        if (feedToggleBtn) {
+          const feedCountEl = feedToggleBtn.querySelector('.sf-comment-count');
+          if (feedCountEl) feedCountEl.textContent = String(newCount);
+        }
+        
         setCountLabel(newCount);
       } catch (err) {
         showToast(err.message || 'Lỗi', 'error');
@@ -898,6 +906,18 @@ function initShareButtons() {
   });
 }
 
+/* ── Message friend button ─────────────────── */
+function initMessageFriendBtn() {
+  document.querySelectorAll('.message-friend-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const uid = btn.dataset.uid;
+      if (!uid) return showToast('User không hợp lệ', 'error');
+      window.location.href = '/messages?user=' + encodeURIComponent(uid);
+    });
+  });
+}
+
 /* ── Init ───────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   ensureTagFilterAlert();
@@ -914,4 +934,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initPostForm();
   initCategoryAdmin();
   initVideoUrlAdd();
+  initMessageFriendBtn();
 });

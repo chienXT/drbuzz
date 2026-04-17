@@ -120,12 +120,8 @@ document.getElementById('unfriendBtn')?.addEventListener('click', async function
 });
 
 document.getElementById('acceptRequestBtn')?.addEventListener('click', async function() {
-  console.log('Accept button clicked for user:', PROFILE_UID);
-  console.log('Current user token exists:', !!localStorage.getItem('token'));
-  
   this.disabled = true; this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
   try {
-    console.log('Sending accept request to:', `/api/friends/accept-from/${PROFILE_UID}`);
     const response = await fetch(`/api/friends/accept-from/${PROFILE_UID}`, {
       method: 'POST',
       headers: {
@@ -134,27 +130,21 @@ document.getElementById('acceptRequestBtn')?.addEventListener('click', async fun
       }
     });
     
-    console.log('Response status:', response.status);
     const data = await response.json();
-    console.log('Accept response data:', data);
     
     if (data.success) {
-      console.log('Accept successful, reloading page...');
       this.innerHTML = '<i class="fas fa-check"></i> Đã chấp nhận';
       showToast('✅ Đã chấp nhận lời mời kết bạn!', 'success');
       
       // Reload page after 1 second to show updated status
       setTimeout(() => {
-        console.log('Reloading page...');
         location.reload();
       }, 1000);
       
     } else {
-      console.error('Accept failed:', data.message);
       alert(data.message || 'Có lỗi xảy ra');
     }
   } catch (error) {
-    console.error('Accept error:', error);
     alert('Có lỗi xảy ra khi chấp nhận lời mời');
   } finally {
     this.disabled = false;
@@ -166,12 +156,8 @@ document.getElementById('declineRequestBtn')?.addEventListener('click', async fu
   if(!confirm('Từ chối lời mời kết bạn?')) return;
   this.disabled = true; this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
   try {
-    console.log('Declining friend request from user:', PROFILE_UID); // Debug log
-    
     // Decline the request using the new API
     const declineResponse = await api(`/api/friends/decline-from/${PROFILE_UID}`, { method:'POST' });
-    
-    console.log('Decline response:', declineResponse); // Debug log
     
     this.innerHTML = '<i class="fas fa-times"></i> Đã từ chối';
     showToast('❌ Đã từ chối lời mời kết bạn!', 'info');
@@ -180,7 +166,6 @@ document.getElementById('declineRequestBtn')?.addEventListener('click', async fu
     setTimeout(() => location.reload(), 1000);
     
   } catch(e) { 
-    console.error('Decline friend error:', e); // Debug log
     this.disabled = false; 
     this.innerHTML = '<i class="fas fa-times"></i> Từ chối';
     showToast(e.message || 'Có lỗi xảy ra', 'error'); 

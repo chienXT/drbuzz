@@ -59,6 +59,9 @@
               <p class="cp-upload-hint" style="margin-top:6px">Ưu tiên MP4/HLS hoặc URL embed hợp lệ để phát trực tiếp ổn định trên web.</p>
             </div>
 
+            <!-- Post type -->
+            <input type="hidden" name="postType" value="<%= typeof postType !== 'undefined' ? postType : 'video' %>">
+
             <!-- Upload file video (tuỳ chọn) -->
             <div class="cp-field">
               <label class="cp-label">Upload file video <span class="cp-hint-text">(tuỳ chọn)</span></label>
@@ -107,7 +110,7 @@
 
             <!-- Categories -->
             <div class="cp-field">
-              <label class="cp-label">Danh mục</label>
+              <label class="cp-label">Danh mục (Video)</label>
               <div class="cp-checkbox-grid" id="catCheckboxes">
                 <% if (typeof categories !== 'undefined') { %>
                   <% categories.forEach(function(cat) {
