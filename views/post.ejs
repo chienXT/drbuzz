@@ -36,11 +36,7 @@
         <div class="wb-author-row">
           <a href="/u/<%= post.author?.username || '' %>" class="wb-author-avatar-link">
             <div class="wb-author-avatar">
-              <% if (post.author?.avatar) { %>
-                <img src="<%= post.author.avatar %>" alt="<%= post.author?.displayName || 'User' %>" width="32" height="32" loading="lazy">
-              <% } else { %>
-                <img src="<%= (post.author && post.author.avatar) ? post.author.avatar : '/images/default-avatar.svg' %>" alt="<%= post.author?.displayName || 'User' %>" width="32" height="32" loading="lazy">
-              <% } %>
+              <img src="<%= post.author?.avatar || '/images/default-avatar.svg' %>" alt="<%= post.author?.displayName || 'User' %>" width="32" height="32" loading="lazy">
             </div>
           </a>
           <div class="wb-author-info">

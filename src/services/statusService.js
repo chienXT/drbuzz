@@ -191,9 +191,17 @@ const deleteStatus = async (statusId, userId, isAdmin) => {
   if (!isAdmin && String(status.author) !== String(userId)) {
     throw Object.assign(new Error('Không có quyền xóa'), { status: 403 });
   }
+  
+  // Count comments being deleted to update status commentCount
+  const deletedCommentsCount = await StatusComment.countDocuments({ status: statusId });
+  
   await Promise.all([
     Status.findByIdAndDelete(statusId),
     StatusComment.deleteMany({ status: statusId }),
+    // Decrement commentCount (though status is deleted, ensure consistency)
+    Status.findByIdAndUpdate(statusId, { $inc: { commentCount: -deletedCommentsCount } }).catch(() => {
+      // Ignore error if status already deleted
+    }),
   ]);
   return status;
 };
