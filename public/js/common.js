@@ -898,9 +898,9 @@ function renderNotificationMessage(notification, icon) {
     const senderName = escapeHtml(notification.sender.displayName);
     const profileUrl = `/u/${encodeURIComponent(notification.sender.username)}`;
     const trimmedMessage = message.replace(senderName, '').trim();
-    return `${icon} <a href="${profileUrl}" class="link-primary notif-sender-link">${senderName}</a>${trimmedMessage ? ` ${trimmedMessage}` : ''}`;
+    return `<span class="notif-text-row"><span class="notif-type-icon" aria-hidden="true">${icon}</span><span class="notif-message-body"><a href="${profileUrl}" class="link-primary notif-sender-link">${senderName}</a>${trimmedMessage ? ` ${trimmedMessage}` : ''}</span></span>`;
   }
-  return `${icon} ${message}`;
+  return `<span class="notif-text-row"><span class="notif-type-icon" aria-hidden="true">${icon}</span><span class="notif-message-body">${message}</span></span>`;
 }
 
 async function handleFriendRequestNotification(action, userId, notifId, button) {

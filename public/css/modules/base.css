@@ -219,7 +219,11 @@ body *:not(i):not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regu
 }
 .notif-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .notif-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.notif-text { font-size: .83rem; line-height: 1.5; color: var(--ink-2); word-break: break-word; }
+.notif-text { font-size: .83rem; line-height: 1.5; color: var(--ink-2); }
+.notif-text-row { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+.notif-type-icon { flex: 0 0 auto; line-height: 1.2; margin-top: 1px; }
+.notif-message-body { min-width: 0; overflow-wrap: anywhere; word-break: normal; }
+.notif-sender-link { color: var(--ink); font-weight: 600; }
 .notif-text b { color: var(--ink); font-weight: 600; }
 .notif-time { font-size: .72rem; color: var(--ink-4); }
 .notif-unread-dot {
