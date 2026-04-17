@@ -14,6 +14,7 @@ const rateLimit     = require('express-rate-limit');
 const compression   = require('compression');
 
 const connectDB                     = require('../config/database');
+const bootstrapAdmin                = require('./utils/bootstrapAdmin');
 const routes                        = require('./routes');
 const { notFound, errorHandler }    = require('./middleware/errorHandler');
 const initSocket                    = require('./socketHandler');
@@ -106,6 +107,7 @@ const PORT = process.env.PORT || 3000;
 
 (async () => {
   await connectDB();
+  await bootstrapAdmin();
   server.listen(PORT, () => {
     console.log(`\n🔥 DramaBuzz v3 running → http://localhost:${PORT}`);
     console.log(`   ENV: ${process.env.NODE_ENV || 'development'}\n`);
