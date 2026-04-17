@@ -58,6 +58,12 @@ const profileRules = [
     .optional().trim().isEmail().withMessage('Email không hợp lệ').isLength({ max: 200 }),
   body('bio')
     .optional().trim().isLength({ max: 500 }).withMessage('Bio tối đa 500 ký tự'),
+  body('avatarUrl')
+    .optional({ values: 'falsy' }).trim().isURL({ protocols: ['http', 'https'], require_protocol: true })
+    .withMessage('Link avatar không hợp lệ'),
+  body('coverImageUrl')
+    .optional({ values: 'falsy' }).trim().isURL({ protocols: ['http', 'https'], require_protocol: true })
+    .withMessage('Link ảnh bìa không hợp lệ'),
 ];
 
 /* ─── Category ──────────────────────────────── */

@@ -3,7 +3,7 @@
   const activePage = 'profile';
 %>
 <%- include('partials/header') %>
-<link rel="stylesheet" href="/css/profile.css?v=2026.04.17.06">
+<link rel="stylesheet" href="/css/profile.css?v=2026.04.17.08">
 
 <main class="container">
   <div class="page-layout">
@@ -22,7 +22,7 @@
               <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="<%= user.displayName %>">
             </div>
             <button type="button" class="quick-edit-btn quick-edit-avatar" id="quickEditAvatarBtn" aria-label="Đổi avatar">
-              <i class="fas fa-pen"></i>
+              <i class="fas fa-camera"></i>
             </button>
           </div>
           <div class="profile-info">
@@ -64,29 +64,10 @@
         <div class="sidebar-card" id="editFormCard" class="hidden">
           <div class="sidebar-title"><i class="fas fa-pen"></i> Chỉnh sửa thông tin</div>
           <form class="profile-form" id="profileForm" enctype="multipart/form-data">
-            <div class="avatar-upload-wrap">
-              <div class="avatar-preview" id="avatarPreviewWrap">
-                <img src="<%= user.avatar || '/images/default-avatar.svg' %>" alt="" id="avatarPreviewImg">
-              </div>
-              <div>
-                <label class="btn btn-secondary btn-sm clickable">
-                  <i class="fas fa-camera"></i> Đổi ảnh
-                  <input type="file" name="avatar" id="avatarInput" accept="image/*" class="hidden">
-                </label>
-                <div class="file-help-text">JPG/PNG/WebP, tối đa 5MB</div>
-              </div>
-            </div>
-
-            <div class="cover-upload-wrap">
-              <div class="cover-preview<%= user.coverImage ? ' has-image' : '' %>" id="coverPreviewWrap"<% if (user.coverImage) { %> style="background-image:url('<%= user.coverImage %>')"<% } %>></div>
-              <div>
-                <label class="btn btn-secondary btn-sm clickable">
-                  <i class="fas fa-image"></i> Đổi ảnh bìa
-                  <input type="file" name="coverImage" id="coverInput" accept="image/*" class="hidden">
-                </label>
-                <div class="file-help-text">JPG/PNG/WebP, tỷ lệ ngang sẽ đẹp hơn</div>
-              </div>
-            </div>
+            <input type="file" name="avatar" id="avatarInput" accept="image/*" class="hidden">
+            <input type="file" name="coverImage" id="coverInput" accept="image/*" class="hidden">
+            <input type="hidden" name="avatarUrl" id="avatarUrlInput" value="">
+            <input type="hidden" name="coverImageUrl" id="coverImageUrlInput" value="">
 
             <div class="form-group">
               <label class="form-label">Tên hiển thị</label>
@@ -159,6 +140,36 @@
     <%- include('partials/sidebar-right', { hideCategories: true, sidebarClass: 'home-sidebar-right', hideProfile: true }) %>
   </div>
 </main>
+
+<div class="image-picker-modal hidden" id="imagePickerModal" aria-hidden="true">
+  <div class="image-picker-backdrop" id="imagePickerBackdrop"></div>
+  <div class="image-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="imagePickerTitle">
+    <div class="image-picker-head">
+      <h3 class="image-picker-title" id="imagePickerTitle">Đổi ảnh</h3>
+      <button type="button" class="image-picker-close" id="imagePickerCloseBtn" aria-label="Đóng popup">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="image-picker-body">
+      <button type="button" class="btn btn-secondary" id="pickerChooseFileBtn">
+        <i class="fas fa-upload"></i> Chọn ảnh từ máy
+      </button>
+      <div class="image-picker-file-note" id="pickerFileNote">Chưa chọn ảnh nào</div>
+
+      <div class="image-picker-or">hoặc</div>
+
+      <label class="form-label" for="pickerImageUrl">Dán link ảnh</label>
+      <input type="url" class="form-input" id="pickerImageUrl" placeholder="https://example.com/image.jpg">
+      <p class="form-helper-text" id="pickerImageMsg"></p>
+    </div>
+
+    <div class="image-picker-actions">
+      <button type="button" class="btn btn-secondary" id="pickerCancelBtn">Hủy</button>
+      <button type="button" class="btn btn-primary" id="pickerApplyBtn">Áp dụng</button>
+    </div>
+  </div>
+</div>
 
 <footer class="site-footer">
   <div class="container">

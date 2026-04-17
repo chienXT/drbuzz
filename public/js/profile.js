@@ -7,6 +7,10 @@
 
 if (typeof ME === 'undefined') var ME = window.CURRENT_USER || null;
 
+const imagePickerState = {
+  target: null, // 'avatar' | 'cover'
+};
+
 /* ── Edit profile toggle ────────────────────── */
 function initEditToggle() {
   const editBtn   = document.getElementById('editProfileBtn');
@@ -28,31 +32,136 @@ function initEditToggle() {
 /* ── Avatar preview before upload ──────────── */
 function initAvatarPreview() {
   const input   = document.getElementById('avatarInput');
-  const preview = document.getElementById('avatarPreviewWrap');
+  const preview = document.getElementById('profileAvatarPreview');
+  const urlInput = document.getElementById('avatarUrlInput');
   if (!input || !preview) return;
 
   input.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
+    if (urlInput) urlInput.value = '';
 
     preview.innerHTML = `<img src="${url}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    const noteEl = document.getElementById('pickerFileNote');
+    if (noteEl) noteEl.textContent = `Đã chọn: ${file.name}`;
   });
 }
 
 /* ── Cover preview before upload ───────────── */
 function initCoverPreview() {
   const input = document.getElementById('coverInput');
-  const preview = document.getElementById('coverPreviewWrap');
+  const preview = document.getElementById('profileCoverPreview');
+  const urlInput = document.getElementById('coverImageUrlInput');
   if (!input || !preview) return;
 
   input.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
+    if (urlInput) urlInput.value = '';
     preview.style.backgroundImage = `url('${url}')`;
     preview.classList.add('has-image');
+
+    const noteEl = document.getElementById('pickerFileNote');
+    if (noteEl) noteEl.textContent = `Đã chọn: ${file.name}`;
   });
+}
+
+/* ── Image picker modal ───────────────────── */
+function initImagePickerModal() {
+  const modal = document.getElementById('imagePickerModal');
+  const titleEl = document.getElementById('imagePickerTitle');
+  const closeBtn = document.getElementById('imagePickerCloseBtn');
+  const backdrop = document.getElementById('imagePickerBackdrop');
+  const cancelBtn = document.getElementById('pickerCancelBtn');
+  const applyBtn = document.getElementById('pickerApplyBtn');
+  const chooseFileBtn = document.getElementById('pickerChooseFileBtn');
+  const fileNote = document.getElementById('pickerFileNote');
+  const urlInput = document.getElementById('pickerImageUrl');
+  const msgEl = document.getElementById('pickerImageMsg');
+  const avatarInput = document.getElementById('avatarInput');
+  const coverInput = document.getElementById('coverInput');
+  const avatarUrlInput = document.getElementById('avatarUrlInput');
+  const coverUrlInput = document.getElementById('coverImageUrlInput');
+  const avatarPreview = document.getElementById('profileAvatarPreview');
+  const coverPreview = document.getElementById('profileCoverPreview');
+
+  if (!modal) return;
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    imagePickerState.target = null;
+    if (urlInput) urlInput.value = '';
+    if (fileNote) fileNote.textContent = 'Chưa chọn ảnh nào';
+    if (msgEl) msgEl.textContent = '';
+  };
+
+  const openModal = (target) => {
+    imagePickerState.target = target;
+    if (titleEl) titleEl.textContent = target === 'avatar' ? 'Đổi ảnh đại diện' : 'Đổi ảnh bìa';
+    if (urlInput) urlInput.value = '';
+    if (fileNote) fileNote.textContent = 'Chưa chọn ảnh nào';
+    if (msgEl) msgEl.textContent = '';
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+  };
+
+  window.openImagePickerModal = openModal;
+
+  const pickTargetInput = () => imagePickerState.target === 'cover' ? coverInput : avatarInput;
+  const pickTargetUrlInput = () => imagePickerState.target === 'cover' ? coverUrlInput : avatarUrlInput;
+
+  chooseFileBtn?.addEventListener('click', () => {
+    const targetInput = pickTargetInput();
+    if (!targetInput) return;
+    if (msgEl) msgEl.textContent = '';
+    targetInput.click();
+  });
+
+  applyBtn?.addEventListener('click', () => {
+    if (!imagePickerState.target) return;
+    const url = (urlInput?.value || '').trim();
+    const targetInput = pickTargetInput();
+    const targetUrlInput = pickTargetUrlInput();
+
+    if (!url && !(targetInput?.files && targetInput.files.length)) {
+      if (msgEl) msgEl.textContent = 'Hãy chọn file ảnh hoặc dán link ảnh.';
+      return;
+    }
+
+    if (url) {
+      try {
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          throw new Error('invalid_protocol');
+        }
+
+        if (targetUrlInput) targetUrlInput.value = url;
+        if (targetInput) targetInput.value = '';
+
+        if (imagePickerState.target === 'avatar' && avatarPreview) {
+          avatarPreview.innerHTML = `<img src="${url}" alt="" id="avatarPreviewImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        }
+        if (imagePickerState.target === 'cover' && coverPreview) {
+          coverPreview.style.backgroundImage = `url('${url}')`;
+          coverPreview.classList.add('has-image');
+        }
+      } catch {
+        if (msgEl) msgEl.textContent = 'Link ảnh không hợp lệ (chỉ nhận http/https).';
+        return;
+      }
+    } else if (targetUrlInput) {
+      targetUrlInput.value = '';
+    }
+
+    closeModal();
+  });
+
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', closeModal);
 }
 
 /* ── Quick edit avatar/cover buttons ──────── */
@@ -73,12 +182,12 @@ function initQuickImageEditButtons() {
 
   quickAvatarBtn?.addEventListener('click', () => {
     openEditForm();
-    avatarInput?.click();
+    if (window.openImagePickerModal) window.openImagePickerModal('avatar');
   });
 
   quickCoverBtn?.addEventListener('click', () => {
     openEditForm();
-    coverInput?.click();
+    if (window.openImagePickerModal) window.openImagePickerModal('cover');
   });
 }
 
@@ -128,15 +237,10 @@ function initProfileForm() {
 
       // Update profile cover
       const coverEl = document.getElementById('profileCoverPreview');
-      const coverPreviewEl = document.getElementById('coverPreviewWrap');
       if (u.coverImage) {
         if (coverEl) {
           coverEl.style.backgroundImage = `url('${u.coverImage}')`;
           coverEl.classList.add('has-image');
-        }
-        if (coverPreviewEl) {
-          coverPreviewEl.style.backgroundImage = `url('${u.coverImage}')`;
-          coverPreviewEl.classList.add('has-image');
         }
       }
 
@@ -266,6 +370,7 @@ async function loadCommentCount() {
 /* ── Init ───────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   initEditToggle();
+  initImagePickerModal();
   initAvatarPreview();
   initCoverPreview();
   initQuickImageEditButtons();

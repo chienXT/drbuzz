@@ -30,27 +30,68 @@ const getProfile = async (req, res, next) => {
 /** PUT /api/users/me  — cập nhật profile */
 const updateProfile = async (req, res, next) => {
   try {
-    const { displayName, email, bio } = req.body;
+    const { displayName, email, bio, avatarUrl, coverImageUrl } = req.body;
     const user = await User.findById(req.user._id);
+    const avatarFile = req.files?.avatar?.[0] || req.file || null;
+    const coverFile = req.files?.coverImage?.[0] || null;
+
+    const normalizeRemoteImageUrl = (url) => {
+      const raw = String(url || '').trim();
+      if (!raw) return '';
+      const parsed = new URL(raw);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw new Error('URL_PROTOCOL_INVALID');
+      }
+      return parsed.toString();
+    };
 
     if (displayName) user.displayName = displayName.trim().slice(0, 80);
     if (email !== undefined) user.email = email.trim().slice(0, 200);
     if (bio !== undefined)   user.bio   = bio.trim().slice(0, 500);
 
     // Avatar upload
-    if (req.file) {
+    if (avatarFile) {
       // Xóa avatar cũ
       if (user.avatar?.startsWith('/uploads/')) {
         fs.unlink(path.join(__dirname, '../../', user.avatar), () => {});
       }
-      user.avatar = '/uploads/' + req.file.filename;
+      user.avatar = '/uploads/' + avatarFile.filename;
+    } else {
+      const remoteAvatar = normalizeRemoteImageUrl(avatarUrl);
+      if (remoteAvatar) {
+        if (user.avatar?.startsWith('/uploads/')) {
+          fs.unlink(path.join(__dirname, '../../', user.avatar), () => {});
+        }
+        user.avatar = remoteAvatar;
+      }
+    }
+
+    // Cover upload
+    if (coverFile) {
+      if (user.coverImage?.startsWith('/uploads/')) {
+        fs.unlink(path.join(__dirname, '../../', user.coverImage), () => {});
+      }
+      user.coverImage = '/uploads/' + coverFile.filename;
+    } else {
+      const remoteCover = normalizeRemoteImageUrl(coverImageUrl);
+      if (remoteCover) {
+        if (user.coverImage?.startsWith('/uploads/')) {
+          fs.unlink(path.join(__dirname, '../../', user.coverImage), () => {});
+        }
+        user.coverImage = remoteCover;
+      }
     }
 
     await user.save();
 
     const updated = user.toPublic();
     res.json({ success: true, user: updated });
-  } catch (err) { next(err); }
+  } catch (err) {
+    if (err.message === 'URL_PROTOCOL_INVALID') {
+      return res.status(400).json({ success: false, message: 'Link ảnh phải dùng http/https' });
+    }
+    next(err);
+  }
 };
 
 /** GET /api/users/me/bookmarks */

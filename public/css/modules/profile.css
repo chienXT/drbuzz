@@ -90,25 +90,69 @@
 .stat-num { font-size: 1.4rem; font-weight: 700; color: var(--ink); }
 .stat-label { font-size: .78rem; color: var(--ink-4); }
 .profile-form { display: flex; flex-direction: column; gap: 14px; }
-.avatar-upload-wrap { display: flex; align-items: center; gap: 16px; }
-.cover-upload-wrap { display: flex; flex-direction: column; gap: 10px; }
-.avatar-preview {
-  width: 60px; height: 60px; border-radius: 50%; background: var(--primary);
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 1.4rem; font-weight: 700; overflow: hidden;
+
+.image-picker-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
 }
-.cover-preview {
-  width: 100%;
-  height: 120px;
-  border-radius: 12px;
+.image-picker-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.48);
+}
+.image-picker-dialog {
+  position: relative;
+  width: min(92vw, 480px);
+  margin: 8vh auto 0;
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--primary) 0%, #fc8181 100%);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  border-radius: 16px;
+  box-shadow: 0 24px 54px rgba(0, 0, 0, .24);
+  overflow: hidden;
 }
-.cover-preview.has-image {
-  background-color: var(--bg-soft, #f3f4f6);
+.image-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.image-picker-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+.image-picker-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft, #f8fafc);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.image-picker-body {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+.image-picker-file-note {
+  color: var(--ink-3);
+  font-size: .86rem;
+}
+.image-picker-or {
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .72rem;
+  color: var(--ink-4);
+  text-align: center;
+}
+.image-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 16px 16px;
 }
 
 @media (max-width: 640px) {
@@ -131,6 +175,9 @@
   .profile-info .section-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .image-picker-dialog {
+    margin-top: 6vh;
   }
 }
 
